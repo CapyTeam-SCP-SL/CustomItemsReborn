@@ -53,7 +53,7 @@ public class ImplosionGrenade : CustomGrenade
             new()
             {
                 Chance = 50,
-                Location = SpawnLocationType.InsideLocker,
+                Location = SpawnLocationType.Inside079Armory,
             },
             new()
             {
@@ -146,7 +146,7 @@ public class ImplosionGrenade : CustomGrenade
                 if (layerMask == 0)
                 {
                     if (ev.Projectile.Base is ExplosionGrenade explosionGrenade)
-                        layerMask = explosionGrenade._detectionMask;
+                        layerMask = explosionGrenade.DetectionMask;
                 }
 
                 bool line = Physics.Linecast(ev.Projectile.Transform.position, player.Position, layerMask);

@@ -75,7 +75,7 @@ public class Scp2818 : CustomWeapon
             new()
             {
                 Chance = 60,
-                Location = SpawnLocationType.InsideHid,
+                Location = SpawnLocationType.InsideHidChamber,
             },
             new()
             {
@@ -101,15 +101,15 @@ public class Scp2818 : CustomWeapon
                     ev.Player.RemoveItem(item);
                 }
 
-            Player target = Player.Get(ev.TargetNetId);
-            if (ev.ShotPosition == Vector3.zero || (ev.Player.Position - ev.ShotPosition).sqrMagnitude > 1000f)
+            Player target = Player.Get(ev.Player.NetId);
+            if (ev.Direction == Vector3.zero || (ev.Player.Position - ev.Direction).sqrMagnitude > 1000f)
             {
                 ev.Player.Hurt(new UniversalDamageHandler(-1f, DeathTranslations.Warhead));
                 ev.IsAllowed = false;
                 return;
             }
 
-            Timing.RunCoroutine(ShooterProjectile(ev.Player, ev.ShotPosition, target));
+            Timing.RunCoroutine(ShooterProjectile(ev.Player, ev.Direction, target));
         }
         catch (Exception e)
         {

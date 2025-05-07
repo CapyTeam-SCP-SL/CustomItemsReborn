@@ -28,10 +28,11 @@ using InventorySystem.Items.Firearms.Attachments;
 using InventorySystem.Items.Firearms.Attachments.Components;
 using MEC;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 using Camera = Exiled.API.Features.Camera;
 using CameraType = Exiled.API.Enums.CameraType;
 using Item = Exiled.API.Features.Items.Item;
-using KeycardPermissions = Interactables.Interobjects.DoorUtils.KeycardPermissions;
+using KeycardPermissions = Interactables.Interobjects.DoorUtils.DoorPermissionFlags;
 using Player = Exiled.API.Features.Player;
 
 /// <inheritdoc />
@@ -59,6 +60,11 @@ public class EmpGrenade : CustomGrenade
         Limit = 1,
         DynamicSpawnPoints = new List<DynamicSpawnPoint>
         {
+            new()
+            {
+                Chance = 100,
+                Location = SpawnLocationType.Inside079Armory,
+            },
             new()
             {
                 Chance = 100,
@@ -172,7 +178,7 @@ public class EmpGrenade : CustomGrenade
             if (door == null ||
                 BlacklistedDoorTypes.Contains(door.Type) ||
                 (door.DoorLockType > 0 && !OpenLockedDoors) ||
-                (door.RequiredPermissions.RequiredPermissions != KeycardPermissions.None && !OpenKeycardDoors) || door.Type.IsElevator())
+                (door.RequiredPermissions != KeycardPermissions.None && !OpenKeycardDoors) || door.Type.IsElevator())
                 continue;
 
             Log.Debug("Opening a door!");
@@ -207,9 +213,6 @@ public class EmpGrenade : CustomGrenade
                 {
                     case Radio radio:
                         radio.IsEnabled = false;
-                        break;
-                    case Flashlight flashlight:
-                        flashlight.Active = false;
                         break;
                     case Firearm firearm:
                         {

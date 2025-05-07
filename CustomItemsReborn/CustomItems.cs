@@ -25,8 +25,12 @@ public class CustomItems : Plugin<Config>
     /// </summary>
     public static CustomItems Instance { get; private set; } = null!;
 
+    public override string Name { get; } = "Custom Items Reborn";
+    public override string Author { get; } = "Sakred_ (Original by jocker-119)";
+    public override Version Version { get; } = new Version(7, 2, 0);
+
     /// <inheritdoc/>
-    public override Version RequiredExiledVersion { get; } = new(8, 0, 0);
+    public override Version RequiredExiledVersion { get; } = new(9, 6, 0);
 
     /// <inheritdoc/>
     public override void OnEnabled()

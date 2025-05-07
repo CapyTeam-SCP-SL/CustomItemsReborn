@@ -74,9 +74,9 @@ public class AutoGun : CustomWeapon
     public float MaxDistance { get; set; } = 100f;
 
     /// <summary>
-    /// Gets or sets a value indicating whether ammo will be taken per hit(true) or per shot(false).
+    /// Gets or sets a value indicating whether MagazineAmmo will be taken per hit(true) or per shot(false).
     /// </summary>
-    [Description("Gets or sets a value indicating whether ammo will be taken per hit(true) or per shot(false).")]
+    [Description("Gets or sets a value indicating whether MagazineAmmo will be taken per hit(true) or per shot(false).")]
     public bool PerHitAmmo { get; set; } = true;
 
     /// <inheritdoc/>
@@ -91,8 +91,8 @@ public class AutoGun : CustomWeapon
                     continue;
 
                 Vector3 forward = ev.Player.CameraTransform.forward;
-                if (firearm.Ammo == ammoUsed &&
-                    (!PerHitAmmo || firearm.Ammo == 0 || player.Role == RoleTypeId.Spectator ||
+                if (firearm.MagazineAmmo == ammoUsed &&
+                    (!PerHitAmmo || firearm.MagazineAmmo == 0 || player.Role == RoleTypeId.Spectator ||
                      (player.Role.Side == ev.Player.Role.Side && (player.Role.Side != ev.Player.Role.Side || !TeamKill)) ||
                      player == ev.Player ||
                      !(Vector3.Distance(ev.Player.Position, player.Position) < MaxDistance) ||
@@ -100,7 +100,7 @@ public class AutoGun : CustomWeapon
                     continue;
 
                 ammoUsed++;
-                player.Hurt(new FirearmDamageHandler(firearm.Base, Damage, player.Role.Side != Side.Scp));
+                player.Hurt(Damage, DamageType.AK);
                 if (player.IsDead)
                     player.ShowHint("<color=#FF0000>YOU HAVE BEEN KILLED BY AUTO AIM GUN</color>");
                 ev.Player.ShowHitMarker(1f);
@@ -111,7 +111,7 @@ public class AutoGun : CustomWeapon
                 ammoUsed = 1;
             }
 
-            firearm.Ammo -= (byte)ammoUsed;
+            firearm.MagazineAmmo -= (byte)ammoUsed;
             ev.IsAllowed = false;
         }
     }

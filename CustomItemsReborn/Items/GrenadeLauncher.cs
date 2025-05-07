@@ -71,9 +71,9 @@ public class GrenadeLauncher : CustomWeapon
     public override byte ClipSize { get; set; } = 1;
 
     /// <summary>
-    /// Gets or sets a value indicating whether or not players will need actual frag grenades in their inventory to use as ammo. If false, the weapon's base ammo type is used instead.
+    /// Gets or sets a value indicating whether or not players will need actual frag grenades in their inventory to use as MagazineAmmo. If false, the weapon's base MagazineAmmo type is used instead.
     /// </summary>
-    [Description("Whether or not players will need actual frag grenades in their inventory to use as ammo. If false, the weapon's base ammo type is used instead.")]
+    [Description("Whether or not players will need actual frag grenades in their inventory to use as MagazineAmmo. If false, the weapon's base MagazineAmmo type is used instead.")]
     public bool UseGrenades { get; set; } = true;
 
     /// <summary>
@@ -101,7 +101,7 @@ public class GrenadeLauncher : CustomWeapon
         {
             ev.IsAllowed = false;
 
-            if (!(ev.Player.CurrentItem is Firearm firearm) || firearm.Ammo >= ClipSize)
+            if (!(ev.Player.CurrentItem is Firearm firearm) || firearm.MagazineAmmo >= ClipSize)
                 return;
 
             Log.Debug($"{Name}.{nameof(OnReloading)}: {ev.Player.Nickname} is reloading!");
@@ -121,9 +121,9 @@ public class GrenadeLauncher : CustomWeapon
                 }
 
                 ev.Player.DisableEffect(EffectType.Invisible);
-                ev.Player.Connection.Send(new RequestMessage(ev.Firearm.Serial, RequestType.Reload));
+                ev.Firearm.Reload();
 
-                Timing.CallDelayed(3f, () => firearm.Ammo = ClipSize);
+                Timing.CallDelayed(3f, () => firearm.MagazineAmmo = ClipSize);
 
                 loadedGrenade = item.Type == ItemType.GrenadeFlash ? ProjectileType.Flashbang :
                     item.Type == ItemType.GrenadeHE ? ProjectileType.FragGrenade : ProjectileType.Scp018;
@@ -143,7 +143,7 @@ public class GrenadeLauncher : CustomWeapon
         ev.IsAllowed = false;
 
         if (ev.Player.CurrentItem is Firearm firearm)
-            firearm.Ammo -= 1;
+            firearm.MagazineAmmo -= 1;
 
         Vector3 pos = ev.Player.CameraTransform.TransformPoint(new Vector3(0.0715f, 0.0225f, 0.45f));
         Projectile projectile;

@@ -72,16 +72,6 @@ public class Items
     {
         new MediGun(),
     };
-
-    /// <summary>
-    /// Gets the list of Scp127s.
-    /// </summary>
-    [Description("The list of Scp127s.")]
-    public List<Scp127> Scp127s { get; private set; } = new()
-    {
-        new Scp127(),
-    };
-
     /// <summary>
     /// Gets the list of Scp1499s.
     /// </summary>

@@ -57,7 +57,7 @@ public class DeflectorShield : CustomItem
             new()
             {
                 Chance = 10,
-                Location = SpawnLocationType.InsideHid,
+                Location = SpawnLocationType.InsideHidChamber,
             },
         },
     };
