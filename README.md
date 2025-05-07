@@ -1,5 +1,11 @@
-# CustomItems (WIP)
-## WARNING!!! The plugin is in the process of being updated and will be almost completely redone soon.
+# Custom Items Reborn
+
+![GitHub Release](https://img.shields.io/github/v/release/CapyTeam-SCP-SL/CustomItems?include_prereleases&sort=date&display_name=tag&style=for-the-badge&logo=adguard&logoColor=ff4f00&label=Release&labelColor=090909&color=ff4f00&link=https%3A%2F%2Fgithub.com%2FCapyTeam-SCP-SL%2FCustomItems%2Freleases%2Flatest)
+[![Downloads](https://img.shields.io/github/downloads/CapyTeam-SCP-SL/CustomItems/total?style=for-the-badge&logo=icloud&logoColor=00b300&label=Downloads&labelColor=090909&color=00b300
+)](https://github.com/CapyTeam-SCP-SL/CustomItems/releases/)
+[![Discord](https://img.shields.io/discord/1369574855548080148?style=for-the-badge&logo=discord&logoColor=%235865F2&label=Discord&labelColor=090909&color=%235865F2
+)](https://discord.gg/mTKwPf5gdb)
+#### WARNING!!! The plugin is in the process of being updated and will be almost completely redone soon.
 ======
 ## Description
 This plugin has 2 parts, all contained in a single DLL with no needed dependencies.
