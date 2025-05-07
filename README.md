@@ -1,4 +1,5 @@
-# CustomItems
+# CustomItems (WIP)
+## WARNING!!! The plugin is in the process of being updated and will be almost completely redone soon.
 ======
 ## Description
 This plugin has 2 parts, all contained in a single DLL with no needed dependencies.
