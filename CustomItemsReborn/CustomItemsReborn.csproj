@@ -93,6 +93,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\CustomItemsAPI.cs" />
+    <Compile Include="API\SpawnAPI.cs" />
     <Compile Include="Commands\C4Charge.cs" />
     <Compile Include="Components\Rock.cs" />
     <Compile Include="Config.cs" />

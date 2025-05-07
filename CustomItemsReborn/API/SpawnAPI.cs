@@ -10,7 +10,6 @@ using UnityEngine;
 
 public class SpawnAPI
     {
-
     public Pickup CreateAndSpawnPickup(ItemType itemType, RoomType room, Vector3 pos, Quaternion rot,List<ushort> itemList)
     {
         var pickup = Pickup.CreateAndSpawn(itemType, GetGlobalCords(pos, Room.Get(room)), rot);
@@ -20,6 +19,7 @@ public class SpawnAPI
         Log.Debug($"Pickup created and spawned {pickup.Type} at {pickup.Position} in {pickup.Room.Name} with rotation {pickup.Rotation}");
         return pickup;
     }
+        
     public static Vector3 PlayerLocalRotation(Player player)
     {
         if (player.CurrentRoom == null)
