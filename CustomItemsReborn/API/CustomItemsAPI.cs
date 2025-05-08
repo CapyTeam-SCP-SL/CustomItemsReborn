@@ -123,7 +123,6 @@ public abstract class CustomItemsAPI
     /// <param name="ev">The event arguments.</param>
     protected virtual void OnPlayerChangedItem(ChangedItemEventArgs ev)
     {
-
         if (ev == null || ev.Player == null || ev.Item == null)
             return;
 

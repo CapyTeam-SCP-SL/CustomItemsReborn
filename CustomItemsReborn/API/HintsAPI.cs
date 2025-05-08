@@ -82,6 +82,7 @@ public static class HintToItemAPI
     public static Dictionary<ushort, string> ItemSerialToHint { get; } = new();
 }
 
+
 /// <summary>
 /// Placeholder class for ragdoll management (assumed external dependency).
 /// </summary>

@@ -49,6 +49,7 @@ namespace CustomItems.API
         /// </remarks>
         public virtual bool CanBeTurnedDown { get; } = true;
 
+
         /// <summary>
         /// Gets or sets the alignment style for the UI element.
         /// </summary>
