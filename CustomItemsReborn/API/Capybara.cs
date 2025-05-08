@@ -21,6 +21,7 @@ namespace CustomItems.API
     /// </remarks>
     public class Capybara : DynamicElement
     {
+
         /// <summary>
         /// Gets the name of the UI element.
         /// </summary>

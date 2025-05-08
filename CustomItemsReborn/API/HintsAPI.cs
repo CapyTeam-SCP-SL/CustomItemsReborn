@@ -17,6 +17,7 @@ using Exiled.API.Features.Items;
 using MEC;
 using UnityEngine;
 
+
 /// <summary>
 /// Provides utilities for managing player hints, nicknames, custom info, and progress bars in the game.
 /// </summary>

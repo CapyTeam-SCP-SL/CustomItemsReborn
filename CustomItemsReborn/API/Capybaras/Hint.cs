@@ -39,6 +39,7 @@ namespace CustomItems.API.Capybaras
             ContentGetter = GetContent;
         }
 
+
         /// <summary>
         /// Gets the name of the hint element.
         /// </summary>
