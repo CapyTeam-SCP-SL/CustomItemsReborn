@@ -21,48 +21,45 @@ using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs.Map;
 using Exiled.Events.EventArgs.Player;
 using Exiled.Events.EventArgs.Server;
-
-using InventorySystem.Items.Pickups;
 using InventorySystem.Items.ThrowableProjectiles;
-using Mirror;
 using UnityEngine;
 using YamlDotNet.Serialization;
-
-using Object = UnityEngine.Object;
 using PlayerEvent = Exiled.Events.Handlers.Player;
 
-/// <inheritdoc/>
+/// <summary>
+/// Represents a custom C4 explosive charge that can be remotely detonated.
+/// </summary>
 [CustomItem(ItemType.GrenadeHE)]
 public class C4Charge : CustomGrenade
 {
     /// <summary>
-    /// Enum containing methods indicating how C4 charge can be removed.
+    /// Enum defining methods for removing a C4 charge.
     /// </summary>
     public enum C4RemoveMethod
     {
         /// <summary>
-        /// C4 charge will be removed without exploding.
+        /// Removes the C4 charge without exploding.
         /// </summary>
         Remove = 0,
 
         /// <summary>
-        /// C4 charge will be detonated.
+        /// Detonates the C4 charge.
         /// </summary>
         Detonate = 1,
 
         /// <summary>
-        /// C4 charge will drop as a pickable item.
+        /// Drops the C4 charge as a pickable item.
         /// </summary>
         Drop = 2,
     }
 
     /// <summary>
-    /// Gets the instance of this item manager.
+    /// Gets the singleton instance of this item manager.
     /// </summary>
     public static C4Charge Instance { get; private set; } = null!;
 
     /// <summary>
-    /// Gets all of the currently placed charges.
+    /// Gets a dictionary of currently placed C4 charges and their owners.
     /// </summary>
     public static Dictionary<Pickup, Player> PlacedCharges { get; } = new();
 
@@ -81,91 +78,66 @@ public class C4Charge : CustomGrenade
         Limit = 5,
         DynamicSpawnPoints = new List<DynamicSpawnPoint>
         {
-            new()
-            {
-                Chance = 10,
-                Location = SpawnLocationType.InsideLczArmory,
-            },
-
-            new()
-            {
-                Chance = 25,
-                Location = SpawnLocationType.InsideHczArmory,
-            },
-
-            new()
-            {
-                Chance = 50,
-                Location = SpawnLocationType.InsideNukeArmory,
-            },
-
-            new()
-            {
-                Chance = 50,
-                Location = SpawnLocationType.Inside049Armory,
-            },
-
-            new()
-            {
-                Chance = 100,
-                Location = SpawnLocationType.InsideSurfaceNuke,
-            },
+            new() { Chance = 10, Location = SpawnLocationType.InsideLczArmory },
+            new() { Chance = 25, Location = SpawnLocationType.InsideHczArmory },
+            new() { Chance = 50, Location = SpawnLocationType.Inside049Armory },
+            new() { Chance = 100, Location = SpawnLocationType.InsideSurfaceNuke },
         },
     };
 
     /// <inheritdoc/>
-    public override string Description { get; set; } = "Explosive charge that can be remotly detonated.";
+    public override string Description { get; set; } = "An explosive charge that can be remotely detonated.";
 
     /// <summary>
-    /// Gets or sets a value indicating whether C4 charge should stick to walls / ceiling.
+    /// Gets or sets a value indicating whether the C4 charge sticks to walls or ceilings.
     /// </summary>
-    [Description("Should C4 charge stick to walls / ceiling.")]
+    [Description("Should C4 charge stick to walls or ceilings.")]
     public bool IsSticky { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets a value indicating throwing force muliplier.
+    /// Gets or sets the multiplier for the C4 throwing force.
     /// </summary>
-    [Description("Defines how strongly C4 will be thrown")]
+    [Description("Defines the strength of the C4 throw.")]
     public float ThrowMultiplier { get; set; } = 40f;
 
     /// <summary>
-    /// Gets or sets a value indicating whether C4 charge require a specific item to be detonated.
+    /// Gets or sets a value indicating whether a specific item is required to detonate the C4.
     /// </summary>
     [Description("Should C4 require a specific item to be detonated.")]
     public bool RequireDetonator { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the Detonator Item that will be used to detonate C4 Charges.
+    /// Gets or sets the item type used as the detonator for C4 charges.
     /// </summary>
-    [Description("The Detonator Item that will be used to detonate C4 Charges")]
+    [Description("The item type used to detonate C4 charges.")]
     public ItemType DetonatorItem { get; set; } = ItemType.Radio;
 
     /// <summary>
-    /// Gets or sets a value indicating whether C4 charges will be detonated, destroyed or dropped as a pickup, when player who placed them dies/leaves the game.
+    /// Gets or sets the method to handle C4 charges when the owner dies or leaves the game.
     /// </summary>
-    [Description("What happens with C4 charges placed by player, when he dies/leaves the game. (Remove / Detonate / Drop)")]
+    [Description("What happens to C4 charges when the player dies or leaves. (Remove / Detonate / Drop)")]
     public C4RemoveMethod MethodOnDeath { get; set; } = C4RemoveMethod.Drop;
 
     /// <summary>
-    /// Gets or sets a value indicating whether C4 can be defused.
+    /// Gets or sets a value indicating whether C4 can be defused by shooting.
     /// </summary>
-    [Description("Should shooting at C4 charges do something.")]
+    [Description("Should shooting at C4 charges trigger an action.")]
     public bool AllowShoot { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets a value indicating whether C4 charges will be detonated, destroyed or dropped as a pickup, when they have been shot.
+    /// Gets or sets the method to handle C4 charges when shot.
     /// </summary>
-    [Description("What happens with C4 charges after they are shot. (Remove / Detonate / Drop)")]
+    [Description("What happens to C4 charges when shot. (Remove / Detonate / Drop)")]
     public C4RemoveMethod ShotMethod { get; set; } = C4RemoveMethod.Remove;
 
     /// <summary>
-    /// Gets or sets a value indicating whether maximum distance between C4 Charge and player to detonate.
+    /// Gets or sets the maximum distance for detonating a C4 charge.
     /// </summary>
-    [Description("Maximum distance between C4 Charge and player to detonate.")]
+    [Description("Maximum distance between C4 charge and player to detonate.")]
     public float MaxDistance { get; set; } = 100f;
 
     /// <summary>
-    /// Gets or sets time after which the C4 charge will automatically detonate.
+    /// Gets or sets the time after which the C4 charge will automatically detonate.
     /// </summary>
     [Description("Time after which the C4 charge will automatically detonate.")]
     public override float FuseTime { get; set; } = 9999f;
@@ -179,38 +151,40 @@ public class C4Charge : CustomGrenade
     public override ItemType Type { get; set; } = ItemType.GrenadeHE;
 
     /// <summary>
-    /// Handles the removal of C4 charges.
+    /// Handles the removal or detonation of a C4 charge.
     /// </summary>
-    /// <param name="charge"> The C4 charge to be handled.</param>
-    /// <param name="removeMethod"> The method of removing the charge.</param>
+    /// <param name="charge">The C4 charge to handle.</param>
+    /// <param name="removeMethod">The method to use for removal.</param>
     public void C4Handler(Pickup? charge, C4RemoveMethod removeMethod = C4RemoveMethod.Detonate)
     {
-        if (charge?.Position is null)
+        if (charge == null || charge.Position == null)
             return;
-        switch (removeMethod)
-        {
-            case C4RemoveMethod.Remove:
-                {
-                    break;
-                }
 
-            case C4RemoveMethod.Detonate:
-                {
+        try
+        {
+            switch (removeMethod)
+            {
+                case C4RemoveMethod.Remove:
+                    break;
+
+                case C4RemoveMethod.Detonate:
                     ExplosiveGrenade grenade = (ExplosiveGrenade)Item.Create(Type);
                     grenade.FuseTime = 0.1f;
                     grenade.SpawnActive(charge.Position);
                     break;
-                }
 
-            case C4RemoveMethod.Drop:
-                {
+                case C4RemoveMethod.Drop:
                     TrySpawn(Id, charge.Position, out _);
                     break;
-                }
-        }
+            }
 
-        PlacedCharges.Remove(charge);
-        charge.Destroy();
+            PlacedCharges.Remove(charge);
+            charge.Destroy();
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Error in C4Handler: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
@@ -232,6 +206,7 @@ public class C4Charge : CustomGrenade
         PlayerEvent.Destroying -= OnDestroying;
         PlayerEvent.Died -= OnDied;
         PlayerEvent.Shooting -= OnShooting;
+        Exiled.Events.Handlers.Server.RoundEnded -= OnRoundEnded;
 
         base.UnsubscribeEvents();
     }
@@ -240,63 +215,71 @@ public class C4Charge : CustomGrenade
     protected override void OnWaitingForPlayers()
     {
         PlacedCharges.Clear();
-
         base.OnWaitingForPlayers();
     }
 
+    /// <inheritdoc/>
     protected override void OnThrownProjectile(ThrownProjectileEventArgs ev)
     {
+        if (ev.Projectile == null || ev.Player == null)
+            return;
+
         if (!PlacedCharges.ContainsKey(ev.Projectile))
             PlacedCharges.Add(ev.Projectile, ev.Player);
+
         base.OnThrownProjectile(ev);
     }
 
     /// <inheritdoc/>
     protected override void OnExploding(ExplodingGrenadeEventArgs ev)
     {
-        PlacedCharges.Remove(Pickup.Get(ev.Projectile.Base));
+        if (ev.Projectile?.Base == null)
+            return;
+
+        Pickup pickup = Pickup.Get(ev.Projectile.Base);
+        if (pickup != null)
+            PlacedCharges.Remove(pickup);
     }
 
     private void OnDestroying(DestroyingEventArgs ev)
     {
-        foreach (var charge in PlacedCharges.ToList())
+        if (ev.Player == null)
+            return;
+
+        foreach (var charge in PlacedCharges.Where(c => c.Value == ev.Player).ToList())
         {
-            if (charge.Value == ev.Player)
-            {
-                C4Handler(charge.Key, C4RemoveMethod.Remove);
-            }
+            C4Handler(charge.Key, C4RemoveMethod.Remove);
         }
     }
 
     private void OnDied(DiedEventArgs ev)
     {
-        foreach (var charge in PlacedCharges.ToList())
+        if (ev.Player == null)
+            return;
+
+        foreach (var charge in PlacedCharges.Where(c => c.Value == ev.Player).ToList())
         {
-            if (charge.Value == ev.Player)
-            {
-                C4Handler(charge.Key, MethodOnDeath);
-            }
+            C4Handler(charge.Key, MethodOnDeath);
         }
     }
 
     private void OnShooting(ShootingEventArgs ev)
     {
-        if (!AllowShoot)
+        if (!AllowShoot || ev.Player == null)
             return;
 
         Vector3 forward = ev.Player.CameraTransform.forward;
-        if (Physics.Raycast(ev.Player.CameraTransform.position + forward, forward, out var hit, 500))
-        {
-            EffectGrenade grenade = hit.collider.gameObject.GetComponentInParent<EffectGrenade>();
-            if (grenade == null)
-            {
-                return;
-            }
+        if (!Physics.Raycast(ev.Player.CameraTransform.position + forward, forward, out var hit, 500))
+            return;
 
-            if (PlacedCharges.ContainsKey(Pickup.Get(grenade)))
-            {
-                C4Handler(Pickup.Get(grenade), ShotMethod);
-            }
+        EffectGrenade? grenade = hit.collider.gameObject.GetComponentInParent<EffectGrenade>();
+        if (grenade == null)
+            return;
+
+        Pickup pickup = Pickup.Get(grenade);
+        if (pickup != null && PlacedCharges.ContainsKey(pickup))
+        {
+            C4Handler(pickup, ShotMethod);
         }
     }
 

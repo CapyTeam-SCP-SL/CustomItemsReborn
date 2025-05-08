@@ -59,6 +59,7 @@ public class AntiMemeticPills : CustomItem
         base.UnsubscribeEvents();
     }
 
+
     private void OnUsingItem(UsingItemEventArgs ev)
     {
         if (!Check(ev.Player.CurrentItem))

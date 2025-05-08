@@ -16,37 +16,37 @@ using InventorySystem.Items.ThrowableProjectiles;
 using UnityEngine;
 
 /// <summary>
-/// Special collision handler for rocks.
+/// A custom component for handling rock projectile collisions.
 /// </summary>
 public class Rock : Scp018Projectile
 {
     /// <summary>
-    /// Gets the owner of the 'rock'.
+    /// Gets the owner of the rock projectile.
     /// </summary>
     public GameObject? Owner { get; private set; }
 
     /// <summary>
-    /// Gets the <see cref="Side"/> of the rock, for determining friendly fire.
+    /// Gets the side of the rock for friendly fire checks.
     /// </summary>
     public Side Side { get; private set; }
 
     /// <summary>
-    /// Gets a value indicating whether the rock can hurt allies or not.
+    /// Gets a value indicating whether the rock can damage allies.
     /// </summary>
     public bool FriendlyFire { get; private set; }
 
     /// <summary>
-    /// Gets the thrown damage.
+    /// Gets the damage dealt by the rock when thrown.
     /// </summary>
     public float ThrownDamage { get; private set; }
 
     /// <summary>
-    /// Inits the rock.
+    /// Initializes the rock projectile.
     /// </summary>
-    /// <param name="owner"><inheritdoc cref="Owner"/></param>
-    /// <param name="side"><inheritdoc cref="Side"/></param>
-    /// <param name="friendlyFire"><inheritdoc cref="FriendlyFire"/></param>
-    /// <param name="thrownDamage"><inheritdoc cref="ThrownDamage"/></param>
+    /// <param name="owner">The owner of the rock.</param>
+    /// <param name="side">The side of the rock for friendly fire checks.</param>
+    /// <param name="friendlyFire">Whether the rock can damage allies.</param>
+    /// <param name="thrownDamage">The damage dealt by the rock.</param>
     public void Init(GameObject owner, Side side, bool friendlyFire, float thrownDamage)
     {
         Owner = owner;
@@ -55,31 +55,32 @@ public class Rock : Scp018Projectile
         ThrownDamage = thrownDamage;
     }
 
-    /// <summary>
-    /// The collision handler.
-    /// </summary>
-    /// <param name="collision">The <see cref="Collision"/> occuring.</param>
+    /// <inheritdoc/>
     public override void ProcessCollision(Collision collision)
     {
         try
         {
             if (collision.gameObject == Owner)
-            {
                 return;
-            }
 
-            if (Player.Get(collision.collider.GetComponentInParent<ReferenceHub>()) is Player target && (target.Role.Side != Side || FriendlyFire))
+            Player? target = Player.Get(collision.collider.GetComponentInParent<ReferenceHub>());
+            if (target != null && (FriendlyFire || target.Role.Side != Side))
             {
                 target.Hurt(ThrownDamage, "Smashed with a heavy rock.");
-                Player.Get(Owner).ShowHitMarker(1f);
+                Player.Get(Owner)?.ShowHitMarker(1f);
             }
 
-            CustomItem.Registered.First(customItem => customItem.Name == "Rock").Spawn(collision.GetContact(0).point + Vector3.up, Player.Get(Owner));
+            CustomItem? rockItem = CustomItem.Registered.FirstOrDefault(item => item.Name == "Rock");
+            if (rockItem != null)
+            {
+                rockItem.Spawn(collision.GetContact(0).point + Vector3.up, Player.Get(Owner));
+            }
+
             Destroy(gameObject);
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            Log.Error($"{nameof(ProcessCollision)} error: {exception}");
+            Log.Error($"Error in Rock.ProcessCollision: {ex.Message}");
         }
     }
 }
