@@ -5,7 +5,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace CustomItems.API;
+using RueI.Displays;
+
+namespace lelele.API;
 
 using System;
 using System.Collections.Generic;
@@ -16,7 +18,8 @@ using Exiled.API.Enums;
 using Exiled.API.Features.Items;
 using MEC;
 using UnityEngine;
-
+using CustomItems.API;
+using Display = RueI.Displays;
 
 /// <summary>
 /// Provides utilities for managing player hints, nicknames, custom info, and progress bars in the game.
@@ -26,7 +29,7 @@ public static class HintsAPI
     /// <summary>
     /// Placeholder for UI display elements (assumed to be a custom type).
     /// </summary>
-    public static List<Display> DisplayList { get; } = new();
+    public static List<RueI.Displays.Display> DisplayList { get; } = new();
 
     /// <summary>
     /// Caches UI elements per player (assumed to be a custom type).
@@ -64,7 +67,7 @@ public static class HintsAPI
                 ActiveHints.Add(player, new Dictionary<string, float>());
 
             ActiveHints[player][hint] = time;
-            player.ShowHint(hint, time);
+            player.Hint(hint, time);
         }
         catch (Exception ex)
         {

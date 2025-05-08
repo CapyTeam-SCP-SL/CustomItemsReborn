@@ -131,7 +131,7 @@ public abstract class CustomItemsAPI
             if (ev.Item.Type != ItemType || !IsSelectedCustomItem(ev.Item.Serial, ItemList))
                 return;
 
-            ev.Player.ShowHint(ChangeHint, 5f);
+            ev.Player.Hint(ChangeHint, 5f);
         }
         catch (Exception ex)
         {

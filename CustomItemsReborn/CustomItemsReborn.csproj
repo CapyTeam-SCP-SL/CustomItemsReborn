@@ -114,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\CustomItemsAPI.cs" />
+    <Compile Include="API\Other\Coroutine.cs" />
     <Compile Include="API\SpawnAPI.cs" />
     <Compile Include="API\HintsAPI.cs" />
     <Compile Include="API\Capybara.cs" />

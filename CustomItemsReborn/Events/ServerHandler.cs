@@ -7,7 +7,10 @@
 
 namespace CustomItems.Events;
 
+using E = lelele.API.HintsAPI;
+using global::CustomItems.API;
 using static CustomItems;
+using Exiled.API.Features;
 
 /// <summary>
 /// Event Handlers.
@@ -17,8 +20,12 @@ public class ServerHandler
     /// <summary>
     /// OnReloadingConfigs handler.
     /// </summary>
-    public void OnReloadingConfigs()
-    {
-        Instance.Config.LoadItems();
-    }
+    public void OnReloadingConfigs() => Instance.Config.LoadItems();
+
+    /// <summary>
+    /// WaitingPlayers handler.
+    /// </summary>
+    public void WaitingPlayers() => E.ActiveHints.Clear();
+    
+    
 }

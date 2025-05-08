@@ -17,6 +17,7 @@ using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs.Player;
+using global::CustomItems.API;
 using PlayerRoles;
 using PlayerStatsSystem;
 using UnityEngine;
@@ -108,7 +109,7 @@ public class AutoGun : CustomWeapon
                 ammoUsed++;
                 target.Hurt(Damage, DamageType.AK, null);
                 if (target.IsDead)
-                    target.ShowHint("<color=#FF0000>YOU HAVE BEEN KILLED BY AUTO AIM GUN</color>", 3f);
+                    target.Hint("<color=#FF0000>YOU HAVE BEEN KILLED BY AUTO AIM GUN</color>", 3f);
                 ev.Player.ShowHitMarker(1f);
             }
 
