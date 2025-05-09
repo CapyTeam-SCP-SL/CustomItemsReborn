@@ -40,7 +40,7 @@ using UnityEngine;
 [CustomItem(ItemType.Coin)]
 public class Scp714 : CustomItem
 {
-    private HashSet<Player> equippedPlayers = new();
+    private List<Player> equippedPlayers = new();
     private Dictionary<Player, CoroutineHandle> stamLimiters = new();
     private Dictionary<Player, List<(EffectType, float)>> existingEffects = new();
 

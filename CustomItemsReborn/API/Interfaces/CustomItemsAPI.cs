@@ -15,136 +15,169 @@ using Exiled.API.Features.Items;
 using Exiled.API.Features.Pickups;
 using Exiled.Events.EventArgs.Player;
 using LabApi.Features.Wrappers;
+using Player = Exiled.API.Features.Player;
 
 /// <summary>
-/// Abstract base class for managing custom items, providing event handling for item pickup and selection.
+/// Abstract base class for custom items, providing event handling and utilities for item pickup and selection.
 /// </summary>
 public abstract class CustomItemsAPI
 {
     /// <summary>
-    /// Gets the name of the custom item.
+    /// Stores serial numbers of all created custom items for quick lookup.
+    /// </summary>
+    private static readonly HashSet<ushort> CreatedCustomItems = [];
+
+    /// <summary>
+    /// Gets the display name of the custom item.
     /// </summary>
     public abstract string ItemName { get; }
 
     /// <summary>
-    /// Gets the type of the custom item.
+    /// Gets the base item type used for the custom item.
     /// </summary>
     public abstract ItemType ItemType { get; }
 
     /// <summary>
-    /// Gets the broadcast message shown when the item is picked up.
+    /// Gets the broadcast message displayed when the item is picked up.
     /// </summary>
     public abstract string PickupBroadcast { get; }
 
     /// <summary>
-    /// Gets the hint message shown when the item is selected.
+    /// Gets the hint message displayed when the item is selected.
     /// </summary>
     public abstract string ChangeHint { get; }
 
     /// <summary>
-    /// Gets the list of serial numbers for this custom item type.
+    /// Gets the List of serial numbers for instances of this custom item.
     /// </summary>
-    public abstract List<ushort> ItemList { get; }
+    public abstract HashSet<ushort> ItemList { get; }
 
     /// <summary>
-    /// Gets the list of serial numbers for all created custom items.
+    /// Initializes the custom item, allowing derived classes to set up initial state.
     /// </summary>
-    public static List<ushort> CreatedCustomItems { get; } = new List<ushort>();
-
-    public virtual void CreateCustomItem() { }
+    public virtual void Initialize() { }
 
     /// <summary>
-    /// Subscribes to necessary events for handling custom item interactions.
+    /// Creates and spawns the custom item in the game world.
     /// </summary>
-    public virtual void SubscribeToEvents()
+    public virtual void CreateCustomItem()
+    {
+        // Default implementation is empty; derived classes can override to spawn items.
+    }
+
+    /// <summary>
+    /// Subscribes to events for handling custom item interactions.
+    /// </summary>
+    public void SubscribeToEvents()
     {
         try
         {
             Exiled.Events.Handlers.Player.PickingUpItem += OnPickingUpItem;
             Exiled.Events.Handlers.Player.ChangedItem += OnPlayerChangedItem;
             SubscribeEvents();
-            Log.Debug($"Subscribed to events for {ItemName} custom item.");
+            Log.Debug($"Successfully subscribed to events for {ItemName}.");
         }
         catch (Exception ex)
         {
-            Log.Error($"Error subscribing to events for {ItemName}: {ex.Message}");
+            Log.Error($"Failed to subscribe to events for {ItemName}: {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     /// <summary>
-    /// Unsubscribes from all events to prevent memory leaks.
+    /// Unsubscribes from events to prevent memory leaks.
     /// </summary>
-    public virtual void UnsubscribeToEvents()
+    public void UnsubscribeToEvents()
     {
         try
         {
             Exiled.Events.Handlers.Player.PickingUpItem -= OnPickingUpItem;
             Exiled.Events.Handlers.Player.ChangedItem -= OnPlayerChangedItem;
             UnsubscribeEvents();
-            Log.Debug($"Unsubscribed from events for {ItemName} custom item.");
+            Log.Debug($"Successfully unsubscribed from events for {ItemName}.");
         }
         catch (Exception ex)
         {
-            Log.Error($"Error unsubscribing from events for {ItemName}: {ex.Message}");
+            Log.Error($"Failed to unsubscribe from events for {ItemName}: {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     /// <summary>
-    /// Checks if an item serial corresponds to this custom item type.
+    /// Checks if an item is a valid custom item of this type.
     /// </summary>
     /// <param name="serial">The serial number of the item.</param>
-    /// <param name="itemList">The list of valid serial numbers for this item type.</param>
-    /// <returns>True if the item is a valid custom item of this type, otherwise false.</returns>
-    public static bool IsSelectedCustomItem(ushort serial, List<ushort> itemList)
+    /// <param name="itemList">The List of valid serial numbers for this item type.</param>
+    /// <returns>True if the item is a valid custom item, otherwise false.</returns>
+    public static bool IsSelectedCustomItem(ushort serial, HashSet<ushort> itemList)
     {
         return CreatedCustomItems.Contains(serial) && itemList.Contains(serial);
     }
 
     /// <summary>
-    /// Handles the event when a player picks up an item.
+    /// Adds a serial number to the global List of created custom items.
     /// </summary>
-    /// <param name="ev">The event arguments.</param>
+    /// <param name="serial">The serial number to add.</param>
+    protected static void AddCreatedCustomItem(ushort serial)
+    {
+        CreatedCustomItems.Add(serial);
+    }
+
+    /// <summary>
+    /// Validates event arguments and item type for event handlers.
+    /// </summary>
+    /// <param name="player">The player involved in the event.</param>
+    /// <param name="itemType">The item type to check.</param>
+    /// <param name="serial">The serial number to check.</param>
+    /// <returns>True if the event is valid for this custom item, otherwise false.</returns>
+    private bool IsValidEvent(Player player, ItemType itemType, ushort serial)
+    {
+        return player != null && itemType == ItemType && IsSelectedCustomItem(serial, ItemList);
+    }
+
+    /// <summary>
+    /// Handles the pickup event to display a broadcast message for the custom item.
+    /// </summary>
+    /// <param name="ev">The pickup event arguments.</param>
     protected virtual void OnPickingUpItem(PickingUpItemEventArgs ev)
     {
-        if (ev == null || ev.Player == null || ev.Pickup == null)
+        if (ev?.Pickup == null || !IsValidEvent(ev.Player, ev.Pickup.Type, ev.Pickup.Serial))
             return;
 
         try
         {
-            if (ev.Pickup.Type != ItemType || !IsSelectedCustomItem(ev.Pickup.Serial, ItemList))
-                return;
-
             ev.Player.Broadcast(3, PickupBroadcast, global::Broadcast.BroadcastFlags.Normal);
         }
         catch (Exception ex)
         {
-            Log.Error($"Error in OnPickingUpItem for {ItemName}: {ex.Message}");
+            Log.Error($"Error handling pickup for {ItemName}: {ex.Message}\n{ex.StackTrace}");
         }
     }
 
     /// <summary>
-    /// Handles the event when a player changes their selected item.
+    /// Handles the item selection event to display a hint for the custom item.
     /// </summary>
-    /// <param name="ev">The event arguments.</param>
+    /// <param name="ev">The item selection event arguments.</param>
     protected virtual void OnPlayerChangedItem(ChangedItemEventArgs ev)
     {
-        if (ev == null || ev.Player == null || ev.Item == null)
+        if (ev?.Item == null || !IsValidEvent(ev.Player, ev.Item.Type, ev.Item.Serial))
             return;
 
         try
         {
-            if (ev.Item.Type != ItemType || !IsSelectedCustomItem(ev.Item.Serial, ItemList))
-                return;
-
             ev.Player.Hint(ChangeHint, 5f);
         }
         catch (Exception ex)
         {
-            Log.Error($"Error in OnPlayerChangedItem for {ItemName}: {ex.Message}");
+            Log.Error($"Error handling item selection for {ItemName}: {ex.Message}\n{ex.StackTrace}");
         }
-
-
     }
+
+    /// <summary>
+    /// Allows derived classes to subscribe to additional events.
+    /// </summary>
     protected virtual void SubscribeEvents() { }
+
+    /// <summary>
+    /// Allows derived classes to unsubscribe from additional events.
+    /// </summary>
     protected virtual void UnsubscribeEvents() { }
 }

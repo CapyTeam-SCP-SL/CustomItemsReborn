@@ -37,7 +37,7 @@ namespace CustomItemsReborn.API.Other
         /// </summary>
         /// <returns>An iterator yielding a 0.5-second delay between iterations.</returns>
         /// <remarks>
-        /// The coroutine iterates through all connected players, updates their displays in <see cref="HintsAPI.DisplayList"/>,
+        /// The coroutine iterates through all connected players, updates their displays in <see cref="HintsAPI.DisplayHashSet"/>,
         /// synchronizes <see cref="Capybara"/> elements from <see cref="HintsAPI.CachedPlayerElements"/>,
         /// and shows hints. For dead players in spectator mode, it displays the spectated player's hint.
         /// Errors are logged to prevent crashes.
@@ -48,18 +48,18 @@ namespace CustomItemsReborn.API.Other
             {
                 try
                 {
-                    // Loop through all players in the list
-                    foreach (Player? pl in Player.List)
+                    // Loop through all players in the HashSet
+                    foreach (Player? pl in Player.HashSet)
                     {
                         // Skip if player is null or not connected
                         if (pl == null || !pl.IsConnected) continue;
 
-                        // Add player's display to DisplayList if not present
-                        if (!HintsAPI.DisplayList.Any(x => x.ReferenceHub == pl.ReferenceHub))
-                            HintsAPI.DisplayList.Add(new(pl.ReferenceHub));
+                        // Add player's display to DisplayHashSet if not present
+                        if (!HintsAPI.DisplayHashSet.Any(x => x.ReferenceHub == pl.ReferenceHub))
+                            HintsAPI.DisplayHashSet.Add(new(pl.ReferenceHub));
 
                         // Find the player's display
-                        Display playerDisplay = HintsAPI.DisplayList.Find(x => x.ReferenceHub == pl.ReferenceHub);
+                        Display playerDisplay = HintsAPI.DisplayHashSet.Find(x => x.ReferenceHub == pl.ReferenceHub);
 
                         // Skip if display is not found
                         if (playerDisplay == null) continue;
@@ -69,7 +69,7 @@ namespace CustomItemsReborn.API.Other
                             HintsAPI.CachedPlayerElements.Add(pl, HintsAPI.CachedElements);
 
                         // Synchronize Capybara elements for the player
-                        if (HintsAPI.CachedPlayerElements.TryGetValue(pl, out List<Capybara>? savedElements))
+                        if (HintsAPI.CachedPlayerElements.TryGetValue(pl, out HashSet<Capybara>? savedElements))
                         {
                             // Clear current display elements
                             playerDisplay.Elements.Clear();

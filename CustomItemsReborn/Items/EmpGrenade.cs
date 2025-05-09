@@ -106,8 +106,8 @@ public class EmpGrenade : CustomGrenade
     /// <summary>
     /// Gets or sets a value indicating what doors will never be opened by EMP grenades.
     /// </summary>
-    [Description("A list of door names that will not be opened with EMP grenades regardless of the above configs.")]
-    public HashSet<DoorType> BlacklistedDoorTypes { get; set; } = new();
+    [Description("A List of door names that will not be opened with EMP grenades regardless of the above configs.")]
+    public List<DoorType> BlackListedDoorTypes { get; set; } = new();
 
     /// <summary>
     /// Gets or sets a value indicating whether if tesla gates will get disabled.
@@ -176,7 +176,7 @@ public class EmpGrenade : CustomGrenade
         foreach (Door door in room.Doors)
         {
             if (door == null ||
-                BlacklistedDoorTypes.Contains(door.Type) ||
+                BlackListedDoorTypes.Contains(door.Type) ||
                 (door.DoorLockType > 0 && !OpenLockedDoors) ||
                 (door.RequiredPermissions != KeycardPermissions.None && !OpenKeycardDoors) || door.Type.IsElevator())
                 continue;

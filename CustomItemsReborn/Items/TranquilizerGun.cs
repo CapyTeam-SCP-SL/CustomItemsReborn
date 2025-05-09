@@ -36,7 +36,7 @@ using Random = UnityEngine.Random;
 public class TranquilizerGun : CustomWeapon
 {
     private readonly Dictionary<Player, float> tranquilizedPlayers = new();
-    private readonly List<Player> activeTranqs = new();
+    private readonly HashSet<Player> activeTranqs = new();
 
     /// <inheritdoc/>
     public override uint Id { get; set; } = 11;
@@ -54,7 +54,7 @@ public class TranquilizerGun : CustomWeapon
     public override SpawnProperties? SpawnProperties { get; set; } = new()
     {
         Limit = 1,
-        DynamicSpawnPoints = new List<DynamicSpawnPoint>
+        DynamicSpawnPoints = new HashSet<DynamicSpawnPoint>
         {
             new()
             {
@@ -187,7 +187,7 @@ public class TranquilizerGun : CustomWeapon
         Item previousItem = player.CurrentItem;
         Vector3 previousScale = player.Scale;
         float newHealth = player.Health - Damage;
-        List<StatusEffectBase> activeEffects = ListPool<StatusEffectBase>.Pool.Get();
+        HashSet<StatusEffectBase> activeEffects = HashSetPool<StatusEffectBase>.Pool.Get();
         player.CurrentItem = null;
 
         if (newHealth <= 0)
@@ -201,7 +201,7 @@ public class TranquilizerGun : CustomWeapon
             {
                 if (player.Items.Count < 0)
                 {
-                    foreach (Item item in player.Items.ToList())
+                    foreach (Item item in player.Items.ToHashSet())
                     {
                         if (TryGet(item, out CustomItem? customItem))
                         {
@@ -265,7 +265,7 @@ public class TranquilizerGun : CustomWeapon
                 player.EnableEffect(effect, effect.Duration);
 
             activeTranqs.Remove(player);
-            ListPool<StatusEffectBase>.Pool.Return(activeEffects);
+            HashSetPool<StatusEffectBase>.Pool.Return(activeEffects);
         }
         catch (Exception e)
         {

@@ -11,165 +11,263 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using CustomItemsReborn.API;
+using CustomItemsReborn.API.Interfaces;
 using Exiled.API.Enums;
 using Exiled.API.Features;
-using Exiled.API.Features.Attributes;
-using Exiled.API.Features.Items;
-using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs.Player;
-
 using MEC;
 using PlayerRoles;
 using PlayerStatsSystem;
 using UnityEngine;
-using YamlDotNet.Serialization;
 
 /// <summary>
-/// A gun that kills you.
+/// Represents SCP-2818, a custom firearm that propels the user as a projectile toward the aimed direction.
 /// </summary>
-[CustomItem(ItemType.GunE11SR)]
-public class Scp2818 : CustomWeapon
+public class Scp2818 : CustomItemsAPI
 {
-    /// <inheritdoc/>
-    public override uint Id { get; set; } = 14;
-
-    /// <inheritdoc/>
-    public override string Name { get; set; } = "SCP-2818";
-
-    /// <inheritdoc/>
-    public override string Description { get; set; } =
-        "When this weapon is fired, it uses the biomass of the shooter as the bullet.";
-
-    /// <inheritdoc/>
-    public override float Weight { get; set; } = 3.95f;
-
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public override byte ClipSize { get; set; } = 1;
+    // Constants for projectile transformation
+    private const float ProjectileStartOffsetX = 0.0715f;
+    private const float ProjectileStartOffsetY = 0.0225f;
+    private const float ProjectileStartOffsetZ = 0.45f;
+    private const float ProjectileScaleFactor = 0.15f;
+    private const float NormalScaleFactor = 1f;
+    private const float ScaleResetDelay = 0.01f;
+    private const float MaxTravelDistanceSqr = 1000f;
+    private const float MinDistanceToTarget = 0.5f;
 
     /// <summary>
-    /// Gets or sets how often the <see cref="ShooterProjectile"/> coroutine will move the player.
+    /// Stores serial numbers of all SCP-2818 instances for efficient lookup.
     /// </summary>
-    [Description("How frequently the shooter will be moved towards his target.\n# Note, a lower tick frequency, and lower MaxDistance will make the travel smoother, but be more stressful on your server.")]
+    private readonly HashSet<ushort> _serials = [];
+
+    /// <summary>
+    /// Reference to the spawn API for creating pickups.
+    /// </summary>
+    private readonly SpawnAPI _spawn;
+
+    /// <summary>
+    /// Gets the display name of the item.
+    /// </summary>
+    public override string ItemName => "SCP-2818";
+
+    /// <summary>
+    /// Gets the base item type used for SCP-2818.
+    /// </summary>
+    public override ItemType ItemType => ItemType.GunE11SR;
+
+    /// <summary>
+    /// Gets the broadcast message shown when the item is picked up.
+    /// </summary>
+    public override string PickupBroadcast => "<b>You picked up SCP-2818</b>";
+
+    /// <summary>
+    /// Gets the hint shown when the item is selected.
+    /// </summary>
+    public override string ChangeHint => "Shoots the user as a projectile.";
+
+    /// <summary>
+    /// Gets the List of serial numbers for tracking instances of this item.
+    /// </summary>
+    public override HashSet<ushort> ItemList => [.. _serials];
+
+    /// <summary>
+    /// Gets or sets the delay between movement ticks in seconds.
+    /// </summary>
+    [Description("Tick delay in seconds.")]
     public float TickFrequency { get; set; } = 0.00025f;
 
     /// <summary>
-    /// Gets or sets the max distance towards the target location the shooter can be moved each tick.
+    /// Gets or sets the maximum distance moved per tick.
     /// </summary>
-    [Description("The max distance towards the target location the shooter can be moved each tick.")]
-    public float MaxDistancePerTick { get; set; } = 0.50f;
+    [Description("Max distance moved per tick.")]
+    public float MaxDistancePerTick { get; set; } = 0.5f;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the gun should despawn instead of drop when it is fired.
+    /// Gets or sets whether the gun should despawn after use.
     /// </summary>
-    [Description("Whether or not the weapon should despawn itself after it's been used.")]
-    public bool DespawnAfterUse { get; set; } = false;
+    [Description("Despawn gun after use.")]
+    public bool DespawnAfterUse { get; set; }
 
-    /// <inheritdoc/>
-    public override SpawnProperties? SpawnProperties { get; set; } = new()
+    /// <summary>
+    /// Gets or sets the damage dealt to the user upon impact.
+    /// </summary>
+    [Description("Damage on hit.")]
+    public float Damage { get; set; } = float.MaxValue;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Scp2818"/> class.
+    /// </summary>
+    public Scp2818()
     {
-        Limit = 1,
-        DynamicSpawnPoints = new List<DynamicSpawnPoint>
-        {
-            new()
-            {
-                Chance = 60,
-                Location = SpawnLocationType.InsideHidChamber,
-            },
-            new()
-            {
-                Chance = 40,
-                Location = SpawnLocationType.InsideHczArmory,
-            },
-        },
-    };
+        _spawn = new SpawnAPI();
+    }
 
-    /// <inheritdoc/>
-    [Description("The amount of damage the weapon deals when the projectile hits another player.")]
-    public override float Damage { get; set; } = float.MaxValue;
-
-    /// <inheritdoc/>
-    protected override void OnShooting(ShootingEventArgs ev)
+    /// <summary>
+    /// Spawns SCP-2818 pickups in the game world.
+    /// </summary>
+    public override void CreateCustomItem()
     {
         try
         {
-            foreach (Item item in ev.Player.Items.ToList())
-                if (Check(item))
-                {
-                    Log.Debug($"SCP-2818: Found a 2818 in inventory of shooter, removing.");
-                    ev.Player.RemoveItem(item);
-                }
-
-            Player target = Player.Get(ev.Player.NetId);
-            if (ev.Direction == Vector3.zero || (ev.Player.Position - ev.Direction).sqrMagnitude > 1000f)
+            if (_spawn == null)
             {
-                ev.Player.Hurt(new UniversalDamageHandler(-1f, DeathTranslations.Warhead));
+                Log.Error("SpawnAPI is null in Scp2818.CreateCustomItem.");
+                return;
+            }
+
+            _spawn.CreateAndSpawnPickup(ItemType, RoomType.HczHid, Vector3.zero, Quaternion.identity, _serials);
+            _spawn.CreateAndSpawnPickup(ItemType, RoomType.HczArmory, Vector3.zero, Quaternion.identity, _serials);
+            base.CreateCustomItem();
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to create SCP-2818 item: {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    /// <summary>
+    /// Subscribes to the shooting event for SCP-2818 functionality.
+    /// </summary>
+    protected override void SubscribeEvents()
+    {
+        Exiled.Events.Handlers.Player.Shooting += OnShoot;
+        base.SubscribeEvents();
+        Log.Debug("Subscribed to shooting event for SCP-2818.");
+    }
+
+    /// <summary>
+    /// Unsubscribes from the shooting event to prevent memory leaks.
+    /// </summary>
+    protected override void UnsubscribeEvents()
+    {
+        Exiled.Events.Handlers.Player.Shooting -= OnShoot;
+        base.UnsubscribeEvents();
+        Log.Debug("Unsubscribed from shooting event for SCP-2818.");
+    }
+
+    /// <summary>
+    /// Handles the shooting event to initiate the projectile effect.
+    /// </summary>
+    /// <param name="ev">The shooting event arguments.</param>
+    private void OnShoot(ShootingEventArgs ev)
+    {
+        if (ev?.Player?.CurrentItem == null || !IsValidShooter(ev.Player))
+            return;
+
+        try
+        {
+            RemoveScp2818Items(ev.Player);
+            Vector3 direction = ev.Direction;
+
+            if (!IsValidDirection(direction, ev.Player.Position))
+            {
+                KillPlayer(ev.Player, "Invalid direction or excessive distance.");
                 ev.IsAllowed = false;
                 return;
             }
 
-            Timing.RunCoroutine(ShooterProjectile(ev.Player, ev.Direction, target));
+            Timing.RunCoroutine(LaunchProjectile(ev.Player, direction));
+            ev.IsAllowed = false;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Log.Error(e);
+            Log.Error($"Error in OnShoot for SCP-2818: {ex.Message}\n{ex.StackTrace}");
         }
     }
 
-    private IEnumerator<float> ShooterProjectile(Player player, Vector3 targetPos, Player? target = null)
+    /// <summary>
+    /// Validates if the player is holding an SCP-2818 item.
+    /// </summary>
+    /// <param name="player">The player to check.</param>
+    /// <returns>True if the player is a valid shooter, otherwise false.</returns>
+    private bool IsValidShooter(Player player)
     {
-        RoleTypeId playerRole = player.Role;
+        return player.CurrentItem != null && IsSelectedCustomItem(player.CurrentItem.Serial, _serials);
+    }
 
-        // This is the camera transform used to make grenades appear like they are coming from the player's head instead of their stomach. We move them here so they aren't skidding across the floor.
-        player.Position = player.CameraTransform.TransformPoint(new Vector3(0.0715f, 0.0225f, 0.45f));
-        player.Scale = new Vector3(0.15f, 0.15f, 0.15f);
-        if (target != null)
+    /// <summary>
+    /// Removes all SCP-2818 items from the player's inventory.
+    /// </summary>
+    /// <param name="player">The player whose inventory to modify.</param>
+    private void RemoveScp2818Items(Player player)
+    {
+        foreach (var item in player.Items.Where(item => IsSelectedCustomItem(item.Serial, _serials)).ToList())
         {
-            while (Vector3.Distance(player.Position, target.Position) > (MaxDistancePerTick + 0.15f))
-            {
-                if (player.Role != playerRole)
-                    break;
-
-                player.Position = Vector3.MoveTowards(player.Position, target.Position, MaxDistancePerTick);
-
-                yield return Timing.WaitForSeconds(TickFrequency);
-            }
+            player.RemoveItem(item);
         }
-        else
+    }
+
+    /// <summary>
+    /// Validates the shooting direction and distance.
+    /// </summary>
+    /// <param name="direction">The direction of the shot.</param>
+    /// <param name="playerPos">The player's position.</param>
+    /// <returns>True if the direction is valid, otherwise false.</returns>
+    private bool IsValidDirection(Vector3 direction, Vector3 playerPos)
+    {
+        return direction != Vector3.zero && (playerPos - direction).sqrMagnitude <= MaxTravelDistanceSqr;
+    }
+
+    /// <summary>
+    /// Applies lethal damage to the player with a specified reason.
+    /// </summary>
+    /// <param name="player">The player to kill.</param>
+    /// <param name="reason">The reason for the damage.</param>
+    private void KillPlayer(Player player, string reason)
+    {
+        player.Hurt(new UniversalDamageHandler(-1f, DeathTranslations.Warhead));
+        Log.Debug($"Player {player.Nickname} killed due to: {reason}");
+    }
+
+    /// <summary>
+    /// Coroutine that handles the projectile movement of the player.
+    /// </summary>
+    /// <param name="player">The player being propelled.</param>
+    /// <param name="targetPos">The target position to move toward.</param>
+    /// <returns>An iterator for the coroutine.</returns>
+    private IEnumerator<float> LaunchProjectile(Player player, Vector3 targetPos)
+    {
+        if (player == null || !player.IsAlive)
+            yield break;
+
+        RoleTypeId originalRole = player.Role;
+        Transform camera = player.CameraTransform;
+
+        // Transform player into projectile
+        player.Position = camera.TransformPoint(new Vector3(ProjectileStartOffsetX, ProjectileStartOffsetY, ProjectileStartOffsetZ));
+        player.Scale = new Vector3(ProjectileScaleFactor, ProjectileScaleFactor, ProjectileScaleFactor);
+
+        // Move player toward target
+        while (Vector3.Distance(player.Position, targetPos) > MinDistanceToTarget && player.IsAlive)
         {
-            while (Vector3.Distance(player.Position, targetPos) > 0.5f)
+            if (player.Role != originalRole)
             {
-                if (player.Role != playerRole)
-                    break;
-
-                player.Position = Vector3.MoveTowards(player.Position, targetPos, MaxDistancePerTick);
-
-                yield return Timing.WaitForSeconds(TickFrequency);
+                Log.Debug($"Projectile aborted for {player.Nickname}: Role changed from {originalRole}.");
+                break;
             }
+
+            player.Position = Vector3.MoveTowards(player.Position, targetPos, MaxDistancePerTick);
+            yield return Timing.WaitForSeconds(TickFrequency);
         }
 
-        player.Scale = Vector3.one;
-
-        // Make sure the scale is reset properly *before* killing them. That's important.
-        yield return Timing.WaitForSeconds(0.01f);
-
-        if (DespawnAfterUse)
+        // Reset player scale
+        if (player.IsAlive)
         {
-            Log.Debug($"inv count: {player.Items.Count}");
-            foreach (Item item in player.Items)
-            {
-                if (Check(item))
-                {
-                    Log.Debug("found 2818 in inventory, doing funni");
-                    player.RemoveItem(item);
-                }
-            }
+            player.Scale = new Vector3(NormalScaleFactor, NormalScaleFactor, NormalScaleFactor);
+            yield return Timing.WaitForSeconds(ScaleResetDelay);
         }
 
-        if (player.Role != RoleTypeId.Spectator)
-            player.Hurt(new UniversalDamageHandler(-1f, DeathTranslations.Warhead));
-        if (target?.Role != RoleTypeId.Spectator)
-            target?.Hurt(new UniversalDamageHandler(Damage, DeathTranslations.Warhead));
+        // Despawn item if configured
+        if (DespawnAfterUse && player.IsAlive)
+        {
+            RemoveScp2818Items(player);
+        }
+
+        // Apply damage if player is not a spectator
+        if (player.IsAlive && player.Role != RoleTypeId.Spectator)
+        {
+            KillPlayer(player, "Projectile impact.");
+        }
     }
 }

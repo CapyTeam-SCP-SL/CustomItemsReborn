@@ -44,7 +44,7 @@ public class Config : IConfig
     /// <summary>
     /// Gets or sets a value indicating what subclasses should get what items, and their spawn chances.
     /// </summary>
-    [Description("A list of each item and the subclasses that can spawn with it, and the % chance of them receiving it. **This is only used if Advanced Subclassing is installed!**")]
+    [Description("A List of each item and the subclasses that can spawn with it, and the % chance of them receiving it. **This is only used if Advanced Subclassing is installed!**")]
     public Dictionary<string, Dictionary<string, float>> SubclassList { get; set; } = new()
     {
         {

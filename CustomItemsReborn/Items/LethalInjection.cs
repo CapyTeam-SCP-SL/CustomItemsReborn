@@ -7,119 +7,250 @@
 
 namespace CustomItemsReborn.Items;
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using CustomItemsReborn.API;
+using CustomItemsReborn.API.Interfaces;
 using CustomPlayerEffects;
 using Exiled.API.Enums;
 using Exiled.API.Features;
-using Exiled.API.Features.Attributes;
-using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs.Player;
-
 using MEC;
 using PlayerRoles;
 using PlayerRoles.PlayableScps.Scp096;
 using PlayerStatsSystem;
-using Player = Exiled.Events.Handlers.Player;
-using Scp096Role = Exiled.API.Features.Roles.Scp096Role;
+using UnityEngine;
 
-/// <inheritdoc />
-[CustomItem(ItemType.Adrenaline)]
-public class LethalInjection : CustomItem
+/// <summary>
+/// Represents the Lethal Injection (LJ-119), an item that forces SCP-096 out of its rage state, typically killing the user.
+/// </summary>
+public class LethalInjection : CustomItemsAPI
 {
-    /// <inheritdoc/>
-    public override uint Id { get; set; } = 3;
-
-    /// <inheritdoc/>
-    public override string Name { get; set; } = "LJ-119";
-
-    /// <inheritdoc/>
-    public override string Description { get; set; } = "This is a Lethal Injection that, when used, will cause SCP-096 to immediately leave his enrage, regardless of how many targets he currently has, if you are one of his current targets. You always die when using this, even if there's no enrage to break, or you are not a target.";
-
-    /// <inheritdoc/>
-    public override float Weight { get; set; } = 1f;
-
-    /// <inheritdoc/>
-    public override SpawnProperties? SpawnProperties { get; set; } = new()
-    {
-        Limit = 1,
-        DynamicSpawnPoints = new List<DynamicSpawnPoint>
-        {
-            new()
-            {
-                Chance = 100,
-                Location = SpawnLocationType.Inside096,
-            },
-        },
-    };
+    // Constants for injection parameters
+    private const float DefaultInjectionDelay = 1.5f;
+    private const float MinInjectionDelay = 0.5f;
+    private const float DefaultAhpPenalty = 30f;
+    private const float MinAhpPenalty = 0f;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the Lethal Injection should always kill the user, regardless of if they stop SCP-096's enrage.
+    /// Stores serial numbers of all Lethal Injection instances for efficient lookup.
     /// </summary>
-    [Description("Whether the Lethal Injection should always kill the user, regardless of if they stop SCP-096's enrage.")]
+    private readonly HashSet<ushort> _itemList = [];
+
+    /// <summary>
+    /// Reference to the spawn API for creating pickups.
+    /// </summary>
+    private readonly SpawnAPI _spawnApi;
+
+    /// <summary>
+    /// Gets the display name of the item.
+    /// </summary>
+    public override string ItemName => "LJ-119";
+
+    /// <summary>
+    /// Gets the base item type used for the Lethal Injection.
+    /// </summary>
+    public override ItemType ItemType => ItemType.Adrenaline;
+
+    /// <summary>
+    /// Gets the broadcast message shown when the item is picked up.
+    /// </summary>
+    public override string PickupBroadcast => "<b>You have picked up LJ-119</b>";
+
+    /// <summary>
+    /// Gets the hint shown when the item is selected.
+    /// </summary>
+    public override string ChangeHint => "Inject to force SCP-096 out of rage if targeted.\nYou will die after use.";
+
+    /// <summary>
+    /// Gets the List of serial numbers for tracking instances of this item.
+    /// </summary>
+    public override HashSet<ushort> ItemList => [.. _itemList];
+
+    /// <summary>
+    /// Gets or sets whether the injector always kills the user, even if no rage is stopped.
+    /// </summary>
+    [Description("Should the injector always kill the user even when no enrage is stopped.")]
     public bool KillOnFail { get; set; } = true;
 
-    /// <inheritdoc/>
-    protected override void SubscribeEvents()
+    /// <summary>
+    /// Gets or sets the delay in seconds before the injection takes effect.
+    /// </summary>
+    [Description("Delay in seconds before the injection takes effect.")]
+    public float InjectionDelay
     {
-        Player.UsedItem += OnUsingItem;
+        get => _injectionDelay;
+        set => _injectionDelay = Math.Max(value, MinInjectionDelay);
+    }
+    private float _injectionDelay = DefaultInjectionDelay;
 
-        base.SubscribeEvents();
+    /// <summary>
+    /// Gets or sets the artificial health penalty applied if the injection fails to break rage.
+    /// </summary>
+    [Description("Artificial health penalty applied if the injection fails to break rage.")]
+    public float AhpPenalty
+    {
+        get => _ahpPenalty;
+        set => _ahpPenalty = Math.Max(value, MinAhpPenalty);
+    }
+    private float _ahpPenalty = DefaultAhpPenalty;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LethalInjection"/> class.
+    /// </summary>
+    public LethalInjection()
+    {
+        _spawnApi = new SpawnAPI();
     }
 
-    /// <inheritdoc/>
-    protected override void UnsubscribeEvents()
+    /// <summary>
+    /// Spawns a Lethal Injection pickup in the game world.
+    /// </summary>
+    public override void CreateCustomItem()
     {
-        Player.UsedItem -= OnUsingItem;
-
-        base.UnsubscribeEvents();
-    }
-
-    private void OnUsingItem(UsedItemEventArgs ev)
-    {
-        Log.Debug($"{ev.Player.Nickname} used a medical item: {ev.Item}");
-        if (!Check(ev.Player.CurrentItem))
-            return;
-
-        Timing.CallDelayed(1.5f, () =>
+        try
         {
-            Log.Debug($"{ev.Player.Nickname} used a {Name}");
-            foreach (Exiled.API.Features.Player player in Exiled.API.Features.Player.List)
+            if (_spawnApi == null)
             {
-                if (player.Role == RoleTypeId.Scp096)
-                {
-                    Log.Debug($"{ev.Player.Nickname} - {Name} found an 096: {player.Nickname}");
-                    if (player.Role is not Scp096Role scp096)
-                        continue;
-
-                    Log.Debug($"{player.Nickname} 096 component found.");
-                    if ((!scp096.HasTarget(ev.Player) ||
-                         scp096.RageState != Scp096RageState.Docile) &&
-                        scp096.RageState != Scp096RageState.Calming)
-                        continue;
-
-                    Log.Debug($"{player.Nickname} 096 checks passed.");
-                    scp096.RageManager.ServerEndEnrage();
-                    ev.Player.Hurt(new UniversalDamageHandler(-1f, DeathTranslations.Poisoned));
-                    return;
-                }
-            }
-
-            if (!KillOnFail)
-            {
-                if (ev.Player.ArtificialHealth > 30)
-                    ev.Player.ArtificialHealth -= 30;
-                else
-                    ev.Player.ArtificialHealth = 0;
-                ev.Player.DisableEffect<Invigorated>();
+                Log.Error("SpawnAPI is null in LethalInjection.CreateCustomItem.");
                 return;
             }
 
-            Log.Debug($"{Name} kill on fail: {ev.Player.Nickname}");
-            ev.Player.Hurt(new UniversalDamageHandler(-1f, DeathTranslations.Poisoned));
-        });
+            _spawnApi.CreateAndSpawnPickup(ItemType, RoomType.Hcz096, Vector3.zero, Quaternion.identity, _itemList);
+            base.CreateCustomItem();
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to create Lethal Injection item: {ex.Message}\n{ex.StackTrace}");
+        }
+    }
 
-        ev.Player.RemoveItem(ev.Player.CurrentItem);
+    /// <summary>
+    /// Subscribes to the item usage event for Lethal Injection functionality.
+    /// </summary>
+    protected override void SubscribeEvents()
+    {
+        Exiled.Events.Handlers.Player.UsedItem += OnUsedItem;
+        base.SubscribeEvents();
+        Log.Debug("Subscribed to item usage event for Lethal Injection.");
+    }
+
+    /// <summary>
+    /// Unsubscribes from the item usage event to prevent memory leaks.
+    /// </summary>
+    protected override void UnsubscribeEvents()
+    {
+        Exiled.Events.Handlers.Player.UsedItem -= OnUsedItem;
+        base.UnsubscribeEvents();
+        Log.Debug("Unsubscribed from item usage event for Lethal Injection.");
+    }
+
+    /// <summary>
+    /// Handles the item usage event to attempt to break SCP-096's rage and apply consequences.
+    /// </summary>
+    /// <param name="ev">The item usage event arguments.</param>
+    private void OnUsedItem(UsedItemEventArgs ev)
+    {
+        if (!IsValidEvent(ev))
+            return;
+
+        try
+        {
+            ev.Player.RemoveItem(ev.Player.CurrentItem);
+            Timing.CallDelayed(InjectionDelay, () => ProcessInjection(ev.Player));
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Error in OnUsedItem for Lethal Injection: {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    /// <summary>
+    /// Validates the item usage event for Lethal Injection functionality.
+    /// </summary>
+    /// <param name="ev">The item usage event arguments.</param>
+    /// <returns>True if the event is valid, otherwise false.</returns>
+    private bool IsValidEvent(UsedItemEventArgs ev)
+    {
+        return ev?.Player?.CurrentItem != null &&
+               ev.Player.IsAlive &&
+               IsSelectedCustomItem(ev.Player.CurrentItem.Serial, _itemList);
+    }
+
+    /// <summary>
+    /// Processes the injection, attempting to break SCP-096's rage and applying consequences.
+    /// </summary>
+    /// <param name="player">The player who used the injection.</param>
+    private void ProcessInjection(Player player)
+    {
+        if (!player.IsAlive)
+        {
+            Log.Debug($"Injection aborted for {player.Nickname}: Player is not alive.");
+            return;
+        }
+
+        bool brokeEnrage = TryBreakScp096Rage(player);
+
+        if (brokeEnrage || KillOnFail)
+        {
+            KillPlayer(player);
+        }
+        else
+        {
+            ApplyFailurePenalty(player);
+        }
+    }
+
+    /// <summary>
+    /// Attempts to break SCP-096's rage if the player is a target and SCP-096 is in a valid state.
+    /// </summary>
+    /// <param name="player">The player using the injection.</param>
+    /// <returns>True if rage was broken, otherwise false.</returns>
+    private bool TryBreakScp096Rage(Player player)
+    {
+        foreach (Player scp in Player.Get(RoleTypeId.Scp096))
+        {
+            if (scp.Role is not Exiled.API.Features.Roles.Scp096Role scp096)
+                continue;
+
+            bool isTarget = scp096.HasTarget(player);
+            bool canBreak = scp096.RageState is Scp096RageState.Enraged or Scp096RageState.Calming;
+
+            if (!isTarget || !canBreak)
+                continue;
+
+            scp096.RageManager.ServerEndEnrage();
+            Log.Debug($"Player {player.Nickname} broke SCP-096 rage for {scp.Nickname}.");
+            return true;
+        }
+
+        Log.Debug($"Player {player.Nickname} failed to break any SCP-096 rage.");
+        return false;
+    }
+
+    /// <summary>
+    /// Kills the player with a poison damage effect.
+    /// </summary>
+    /// <param name="player">The player to kill.</param>
+    private void KillPlayer(Player player)
+    {
+        player.Hurt(new UniversalDamageHandler(-1f, DeathTranslations.Poisoned));
+        Log.Debug($"Player {player.Nickname} killed by Lethal Injection.");
+    }
+
+    /// <summary>
+    /// Applies a penalty to the player if the injection fails to break rage.
+    /// </summary>
+    /// <param name="player">The player to penalize.</param>
+    private void ApplyFailurePenalty(Player player)
+    {
+        if (player.ArtificialHealth > AhpPenalty)
+            player.ArtificialHealth -= AhpPenalty;
+        else
+            player.ArtificialHealth = 0;
+
+        player.DisableEffect<Invigorated>();
+        Log.Debug($"Applied penalty to {player.Nickname}: Reduced AHP by {AhpPenalty} and disabled Invigorated effect.");
     }
 }

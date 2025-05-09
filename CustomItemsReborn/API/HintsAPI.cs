@@ -95,12 +95,12 @@ public static class TralalelotralalaAPI
 }
 
 /// <summary>
-/// Extension method for random item selection from a list.
+/// Extension method for random item selection from a List.
 /// </summary>
 public static class ListExtensions
 {
-    public static T RandomItem<T>(this List<T> list)
+    public static T RandomItem<T>(this List<T> List)
     {
-        return list.Count > 0 ? list[UnityEngine.Random.Range(0, list.Count)] : default;
+        return List.Count > 0 ? List[UnityEngine.Random.Range(0, List.Count)] : default;
     }
 }

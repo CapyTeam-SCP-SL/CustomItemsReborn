@@ -34,10 +34,10 @@ public class AntiMemeticPills : CustomItemsAPI
     /// <inheritdoc/>
     public override string ChangeHint => "Drugs that make you forget things. If you use these while you are targeted by SCP-096, you will forget what his face looks like, and thus no longer be a target.";
     /// <inheritdoc/>
-    public override List<ushort> ItemList => AntiMemeticPillsList;
+    public override HashSet<ushort> ItemList => AntiMemeticPillsList;
     /// <inheritdoc/>
 
-    public List<ushort> AntiMemeticPillsList = new List<ushort>();
+    public HashSet<ushort> AntiMemeticPillsList = new HashSet<ushort>();
     private SpawnAPI spawnApi;
 
     public override void CreateCustomItem()

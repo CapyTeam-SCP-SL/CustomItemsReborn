@@ -9,7 +9,7 @@
     <RootNamespace>CustomItems</RootNamespace>
     <AssemblyName>CustomItemsReborn</AssemblyName>
     <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
-    <langVersion>13</langVersion>
+    <langVersion>12.0</langVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -76,6 +76,9 @@
     <Reference Include="NorthwoodLib, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\ExMod.Exiled.9.6.0-beta8\lib\net48\NorthwoodLib.dll</HintPath>
     </Reference>
+    <Reference Include="Pooling">
+      <HintPath>..\..\..\..\Desktop\Вещи Код\Pooling.dll</HintPath>
+    </Reference>
     <Reference Include="RueI">
       <HintPath>C:\Users\sakre\Downloads\Telegram Desktop\RueI.dll</HintPath>
     </Reference>
@@ -130,7 +133,6 @@
     <Compile Include="Items\LethalInjection.cs" />
     <Compile Include="Items\LuckyCoin.cs" />
     <Compile Include="Items\MediGun.cs" />
-    <Compile Include="Items\Rock.cs" />
     <Compile Include="Items\Scp1499.cs" />
     <Compile Include="Items\Scp2818.cs" />
     <Compile Include="Items\Scp714.cs" />

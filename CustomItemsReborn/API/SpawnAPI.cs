@@ -27,9 +27,9 @@ public class SpawnAPI
     /// <param name="room">The room where the item will spawn.</param>
     /// <param name="relativePosition">The position relative to the room's origin with zero rotation.</param>
     /// <param name="rotation">The rotation of the pickup.</param>
-    /// <param name="itemList">The list to store the pickup's serial number.</param>
+    /// <param name="itemList">The List to store the pickup's serial number.</param>
     /// <returns>The spawned pickup, or null if creation fails.</returns>
-    public Pickup? CreateAndSpawnPickup(ItemType itemType, RoomType room, Vector3 relativePosition, Quaternion rotation, List<ushort> itemList)
+    public Pickup? CreateAndSpawnPickup(ItemType itemType, RoomType room, Vector3 relativePosition, Quaternion rotation, HashSet<ushort> itemList)
     {
         try
         {

@@ -8,159 +8,161 @@
 namespace CustomItemsReborn.Items;
 
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
+using CustomItemsReborn.API;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
-using Exiled.API.Features.Pickups.Projectiles;
-using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs.Player;
-
-using InventorySystem.Items.Firearms.BasicMessages;
-
 using MEC;
 using UnityEngine;
+using ProjectileType = Exiled.API.Enums.ProjectileType;
 using CollisionHandler = Exiled.API.Features.Components.CollisionHandler;
+using Player = Exiled.API.Features.Player;
+using CustomItemsReborn.API.Interfaces;
+// ◊® ›“Œ ¿¬’«¿¬’€«¿€«¬’¿Ÿ’«¬€«¿’¬€«¿¬€¿«’¬€«¿’¬€«’¿«’¬€¿¬€¿’¬€¿«¬€¿’«¬€«
+/*using global::CustomItemsReborn.API.Interfaces;
+using global::CustomItemsReborn.API;*/
 
-/// <inheritdoc />
-[CustomItem(ItemType.GunLogicer)]
-public class GrenadeLauncher : CustomWeapon
+/// <summary>
+/// Represents a custom grenade launcher (GL-119) that shoots grenades instead of bullets and reloads with grenade items.
+/// </summary>
+public class GrenadeLauncher : CustomItemsAPI
 {
-    private CustomGrenade? loadedCustomGrenade;
+    /// <summary>
+    /// Gets the display name of the item.
+    /// </summary>
+    public override string ItemName => "GL-119";
 
-    private ProjectileType loadedGrenade = ProjectileType.FragGrenade;
+    /// <summary>
+    /// Gets the base item type used for the grenade launcher.
+    /// </summary>
+    public override ItemType ItemType => ItemType.GunCOM15;
 
-    /// <inheritdoc/>
-    public override uint Id { get; set; } = 1;
+    /// <summary>
+    /// Gets the broadcast message shown when the item is picked up.
+    /// </summary>
+    public override string PickupBroadcast => "<b>You picked up the Grenade Launcher</b>";
 
-    /// <inheritdoc/>
-    public override string Name { get; set; } = "GL-119";
+    /// <summary>
+    /// Gets the hint shown when the item is selected.
+    /// </summary>
+    public override string ChangeHint => "Shoots grenades instead of bullets. Reload with grenades.";
 
-    /// <inheritdoc/>
-    public override string Description { get; set; } = "This weapon will launch grenades in the direction you are firing, instead of bullets. Requires Frag Grenades in your inventory to reload.";
+    /// <summary>
+    /// Gets the HashSet of serial numbers for tracking instances of this item.
+    /// </summary>
+    public override HashSet<ushort> ItemList => _serials;
 
-    /// <inheritdoc/>
-    public override float Weight { get; set; } = 2.95f;
+    /// <summary>
+    /// Stores the serial numbers of all grenade launcher instances.
+    /// </summary>
+    private readonly HashSet<ushort> _serials = new();
 
-    /// <inheritdoc/>
-    public override SpawnProperties? SpawnProperties { get; set; } = new()
+    /// <summary>
+    /// Indicates whether the launcher requires grenades to reload.
+    /// </summary>
+    private readonly bool _useGrenades = true;
+
+    /// <summary>
+    /// Indicates whether modded grenades should be ignored during reloading.
+    /// </summary>
+    private readonly bool _ignoreModded = false;
+
+    /// <summary>
+    /// Stores the type of projectile currently loaded in the launcher.
+    /// </summary>
+    private ProjectileType _loadedType = ProjectileType.FragGrenade;
+
+    /// <summary>
+    /// Reference to the spawn API for creating pickups.
+    /// </summary>
+    private SpawnAPI _spawnApi;
+
+    /// <summary>
+    /// Initializes and spawns the grenade launcher pickup in the game world.
+    /// </summary>
+    public override void CreateCustomItem()
     {
-        Limit = 1,
-        DynamicSpawnPoints = new List<DynamicSpawnPoint>
-        {
-            new()
-            {
-                Chance = 50,
-                Location = SpawnLocationType.Inside049Armory,
-            },
-            new()
-            {
-                Chance = 40,
-                Location = SpawnLocationType.InsideHczArmory,
-            },
-        },
-    };
-
-    /// <inheritdoc/>
-    public override float Damage { get; set; }
-
-    /// <inheritdoc/>
-    public override byte ClipSize { get; set; } = 1;
+        _spawnApi.CreateAndSpawnPickup(ItemType, RoomType.Hcz049, Vector3.zero, Quaternion.identity, _serials);
+        base.CreateCustomItem();
+    }
 
     /// <summary>
-    /// Gets or sets a value indicating whether or not players will need actual frag grenades in their inventory to use as MagazineAmmo. If false, the weapon's base MagazineAmmo type is used instead.
+    /// Subscribes to player shooting and reloading events.
     /// </summary>
-    [Description("Whether or not players will need actual frag grenades in their inventory to use as MagazineAmmo. If false, the weapon's base MagazineAmmo type is used instead.")]
-    public bool UseGrenades { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the speed of grenades when they shoot out of the weapon.
-    /// </summary>
-    [Description("The speed of grenades when they shoot out of the weapon.")]
-    public float GrenadeSpeed { get; set; } = 1.5f;
-
-    /// <summary>
-    /// Gets or sets the max duration of the fuse of grenades shot from the weapon. Note, these grenades will always explode immediatly when they collide with something, but this can be used with slow-moving grenades to cause mid-air explosions.
-    /// </summary>
-    [Description("The max duration of the fuse of grenades shot from the weapon. Note, these grenades will always explode immediatly when they collide with something, but this can be used with slow-moving grenades to cause mid-air explosions.")]
-    public float FuseTime { get; set; } = 1f;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the GL should ignore modded grenades.
-    /// </summary>
-    [Description("Whether or not the Grenade Launcher will consider modded frag grenades as viable grenades for reloading.")]
-    public bool IgnoreModdedGrenades { get; set; } = false;
-
-    /// <inheritdoc/>
-    protected override void OnReloading(ReloadingWeaponEventArgs ev)
+    protected override void SubscribeEvents()
     {
-        if (UseGrenades)
+        Exiled.Events.Handlers.Player.Shooting += OnShooting;
+        Exiled.Events.Handlers.Player.ReloadingWeapon += OnReloading;
+        base.SubscribeEvents();
+    }
+
+    /// <summary>
+    /// Unsubscribes from player shooting and reloading events.
+    /// </summary>
+    protected override void UnsubscribeEvents()
+    {
+        Exiled.Events.Handlers.Player.Shooting -= OnShooting;
+        Exiled.Events.Handlers.Player.ReloadingWeapon -= OnReloading;
+        base.UnsubscribeEvents();
+    }
+
+    /// <summary>
+    /// Handles the reloading event to load grenades into the launcher.
+    /// </summary>
+    /// <param name="ev">The reloading event arguments.</param>
+    private void OnReloading(ReloadingWeaponEventArgs ev)
+    {
+        if (!_useGrenades)
+            return;
+
+        ev.IsAllowed = false;
+
+        if (ev.Player.CurrentItem is not Firearm firearm || firearm.MagazineAmmo >= 1)
+            return;
+
+        foreach (Item it in ev.Player.Items.ToHashSet())
         {
-            ev.IsAllowed = false;
+            if (it.Type is not (ItemType.GrenadeHE or ItemType.GrenadeFlash or ItemType.SCP018))
+                continue;
 
-            if (!(ev.Player.CurrentItem is Firearm firearm) || firearm.MagazineAmmo >= ClipSize)
-                return;
+            if (_ignoreModded && IsSelectedCustomItem(it.Serial, _serials))
+                continue;
 
-            Log.Debug($"{Name}.{nameof(OnReloading)}: {ev.Player.Nickname} is reloading!");
-
-            foreach (Item item in ev.Player.Items.ToList())
+            _loadedType = it.Type switch
             {
-                Log.Debug($"{Name}.{nameof(OnReloading)}: Found item: {item.Type} - {item.Serial}");
-                if (item.Type != ItemType.GrenadeHE && item.Type != ItemType.GrenadeFlash && item.Type != ItemType.SCP018)
-                    continue;
-                if (TryGet(item, out CustomItem? cItem))
-                {
-                    if (IgnoreModdedGrenades)
-                        continue;
+                ItemType.GrenadeFlash => ProjectileType.Flashbang,
+                ItemType.SCP018 => ProjectileType.Scp018,
+                _ => ProjectileType.FragGrenade
+            };
 
-                    if (cItem is CustomGrenade customGrenade)
-                        loadedCustomGrenade = customGrenade;
-                }
-
-                ev.Player.DisableEffect(EffectType.Invisible);
-                ev.Firearm.Reload();
-
-                Timing.CallDelayed(3f, () => firearm.MagazineAmmo = ClipSize);
-
-                loadedGrenade = item.Type == ItemType.GrenadeFlash ? ProjectileType.Flashbang :
-                    item.Type == ItemType.GrenadeHE ? ProjectileType.FragGrenade : ProjectileType.Scp018;
-                Log.Debug($"{Name}.{nameof(OnReloading)}: {ev.Player.Nickname} successfully reloaded. Grenade type: {loadedGrenade} IsCustom: {loadedCustomGrenade != null}");
-                ev.Player.RemoveItem(item);
-
-                return;
-            }
-
-            Log.Debug($"{Name}.{nameof(OnReloading)}: {ev.Player.Nickname} was unable to reload - No grenades in inventory.");
+            ev.Player.DisableEffect(EffectType.Invisible);
+            ev.Firearm.Reload();
+            Timing.CallDelayed(3f, () => firearm.MagazineAmmo = 1);
+            ev.Player.RemoveItem(it);
+            return;
         }
     }
 
-    /// <inheritdoc/>
-    protected override void OnShooting(ShootingEventArgs ev)
+    /// <summary>
+    /// Handles the shooting event to fire a grenade projectile.
+    /// </summary>
+    /// <param name="ev">The shooting event arguments.</param>
+    private void OnShooting(ShootingEventArgs ev)
     {
+        if (ev.Player.CurrentItem == null || !IsSelectedCustomItem(ev.Player.CurrentItem.Serial, _serials))
+            return;
+
         ev.IsAllowed = false;
 
         if (ev.Player.CurrentItem is Firearm firearm)
-            firearm.MagazineAmmo -= 1;
+            firearm.MagazineAmmo = 0;
 
-        Vector3 pos = ev.Player.CameraTransform.TransformPoint(new Vector3(0.0715f, 0.0225f, 0.45f));
-        Projectile projectile;
-
-        switch (loadedGrenade)
-        {
-            case ProjectileType.Scp018:
-                projectile = ev.Player.ThrowGrenade(ProjectileType.Scp018).Projectile;
-                break;
-            case ProjectileType.Flashbang:
-                projectile = ev.Player.ThrowGrenade(ProjectileType.Flashbang).Projectile;
-                break;
-            default:
-                projectile = ev.Player.ThrowGrenade(ProjectileType.FragGrenade).Projectile;
-                break;
-        }
-
-        projectile.GameObject.AddComponent<CollisionHandler>().Init(ev.Player.GameObject, projectile.Base);
+        var thrown = ev.Player.ThrowGrenade(_loadedType, false);
+        thrown.Projectile.GameObject
+              .AddComponent<CollisionHandler>()
+              .Init(ev.Player.GameObject, thrown.Projectile.Base);
     }
 }

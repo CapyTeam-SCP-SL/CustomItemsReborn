@@ -1,3 +1,4 @@
+
 // -----------------------------------------------------------------------
 // <copyright file="MediGun.cs" company="CapyTeam SCP: SL">
 // Copyright (c) CapyTeam SCP: SL. All rights reserved.
@@ -7,175 +8,284 @@
 
 namespace CustomItemsReborn.Items;
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-
+using CustomItemsReborn.API;
+using CustomItemsReborn.API.Interfaces;
 using Exiled.API.Enums;
 using Exiled.API.Features;
-using Exiled.API.Features.Attributes;
-using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs.Player;
-
 using PlayerRoles;
 using PlayerStatsSystem;
 using UnityEngine;
 using Firearm = Exiled.API.Features.Items.Firearm;
 
-/// <inheritdoc />
-[CustomItem(ItemType.GunFSP9)]
-public class MediGun : CustomWeapon
+/// <summary>
+/// Represents the MediGun (MG-119), a firearm that shoots healing darts to heal allies or cure SCP-049-2 zombies.
+/// </summary>
+public class MediGun : CustomItemsAPI
 {
-    private readonly Dictionary<Player, RoleTypeId> previousRoles = new();
-
-    /// <inheritdoc/>
-    public override uint Id { get; set; } = 5;
-
-    /// <inheritdoc/>
-    public override string Name { get; set; } = "MG-119";
-
-    /// <inheritdoc/>
-    public override string Description { get; set; } = "A specialized weapon that fires darts filled with a special mixture of Painkillers, Antibiotics, Antiseptics and other medicines. When fires at friendly targets, they will be healed. When fired at instances of SCP-049-2, they will be slowly converted back to human form. Does nothing when fired at anyone else.";
-
-    /// <inheritdoc/>
-    public override float Weight { get; set; } = 1.95f;
-
-    /// <inheritdoc/>
-    public override float Damage { get; set; }
-
-    /// <inheritdoc/>
-    public override byte ClipSize { get; set; } = 10;
+    // Constants for default roles and healing parameters
+    private const RoleTypeId DefaultCuredRole = RoleTypeId.ClassD;
+    private const RoleTypeId MtfCuredRole = RoleTypeId.NtfPrivate;
+    private const RoleTypeId ChaosCuredRole = RoleTypeId.ChaosConscript;
+    private const float MinHealingModifier = 0.1f;
+    private const int MinZombieHealingRequired = 50;
 
     /// <summary>
-    /// Gets or sets a value indicating whether or not to allow friendly fire with this weapon on FF-enabled servers.
+    /// Tracks previous roles of cured zombies for role restoration.
     /// </summary>
-    public override bool FriendlyFire { get; set; } = true;
-
-    /// <inheritdoc/>
-    public override SpawnProperties? SpawnProperties { get; set; } = new()
-    {
-        Limit = 1,
-        DynamicSpawnPoints = new List<DynamicSpawnPoint>
-        {
-            new()
-            {
-                Chance = 40,
-                Location = SpawnLocationType.InsideGr18,
-            },
-            new()
-            {
-                Chance = 50,
-                Location = SpawnLocationType.InsideGateA,
-            },
-            new()
-            {
-                Chance = 50,
-                Location = SpawnLocationType.InsideGateB,
-            },
-        },
-    };
+    private readonly Dictionary<Player, RoleTypeId> _prevRoles = new();
 
     /// <summary>
-    /// Gets or sets a value indicating whether or not zombies can be 'cured' by this weapon.
+    /// Stores serial numbers of all MediGun instances for efficient lookup.
     /// </summary>
-    [Description("Whether or not zombies can be 'cured' by this weapon.")]
+    private readonly HashSet<ushort> _itemList = [];
+
+    /// <summary>
+    /// Reference to the spawn API for creating pickups.
+    /// </summary>
+    private readonly SpawnAPI _spawnApi;
+
+    /// <summary>
+    /// Gets the display name of the item.
+    /// </summary>
+    public override string ItemName => "MG-119";
+
+    /// <summary>
+    /// Gets the base item type used for the MediGun.
+    /// </summary>
+    public override ItemType ItemType => ItemType.GunFSP9;
+
+    /// <summary>
+    /// Gets the broadcast message shown when the item is picked up.
+    /// </summary>
+    public override string PickupBroadcast => "<b>You picked up MG-119</b>";
+
+    /// <summary>
+    /// Gets the hint shown when the item is selected.
+    /// </summary>
+    public override string ChangeHint => "Shoots healing darts. Allies heal, 049-2 cures.";
+
+    /// <summary>
+    /// Gets the List of serial numbers for tracking instances of this item.
+    /// </summary>
+    public override HashSet<ushort> ItemList => [.. _itemList];
+
+    /// <summary>
+    /// Gets or sets whether zombies can be cured by the MediGun.
+    /// </summary>
+    [Description("Should zombies be curable?")]
     public bool HealZombies { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets a value indicating whether or not zombies who are healed will become allies to the healer.
+    /// Gets or sets whether cured zombies are assigned to the healer's team.
     /// </summary>
-    [Description("Whether or not zombies who are healed will become teammates for the healer, or remain as their old class.")]
+    [Description("Convert cured zombie to healer team.")]
     public bool HealZombiesTeamCheck { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the % of damage the weapon would normally deal, that is converted into healing. 1 = 100%, 0.5 = 50%, 0.0 = 0%.
+    /// Gets or sets the percentage of damage converted to healing.
     /// </summary>
-    [Description("The % of damage the weapon would normally deal, that is converted into healing. 1 = 100%, 0.5 = 50%, 0.0 = 0%")]
-    public float HealingModifier { get; set; } = 1f;
+    [Description("Percent of damage converted to healing.")]
+    public float HealingModifier
+    {
+        get => _healingModifier;
+        set => _healingModifier = Math.Max(value, MinHealingModifier);
+    }
+    private float _healingModifier = 1f;
 
     /// <summary>
-    /// Gets or sets the amount of total 'healing' a zombie will require before being cured.
+    /// Gets or sets the artificial health required to cure a zombie.
     /// </summary>
-    [Description("The amount of total 'healing' a zombie will require before being cured.")]
-    public int ZombieHealingRequired { get; set; } = 200;
+    [Description("AHP needed to cure a zombie.")]
+    public int ZombieHealingRequired
+    {
+        get => _zombieHealingRequired;
+        set => _zombieHealingRequired = Math.Max(value, MinZombieHealingRequired);
+    }
+    private int _zombieHealingRequired = 200;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MediGun"/> class.
+    /// </summary>
+    public MediGun()
+    {
+        _spawnApi = new SpawnAPI();
+    }
+
+    /// <summary>
+    /// Spawns MediGun pickups in the game world.
+    /// </summary>
+    public override void CreateCustomItem()
+    {
+        try
+        {
+            if (_spawnApi == null)
+            {
+                Log.Error("SpawnAPI is null in MediGun.CreateCustomItem.");
+                return;
+            }
+
+            _spawnApi.CreateAndSpawnPickup(ItemType, RoomType.HczArmory, Vector3.zero, Quaternion.identity, _itemList);
+            _spawnApi.CreateAndSpawnPickup(ItemType, RoomType.EzGateA, Vector3.zero, Quaternion.identity, _itemList);
+            _spawnApi.CreateAndSpawnPickup(ItemType, RoomType.EzGateB, Vector3.zero, Quaternion.identity, _itemList);
+            base.CreateCustomItem();
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to create MediGun item: {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    /// <summary>
+    /// Subscribes to hurting and dying events for healing and curing logic.
+    /// </summary>
     protected override void SubscribeEvents()
     {
+        Exiled.Events.Handlers.Player.Hurting += OnHurting;
         if (HealZombies)
             Exiled.Events.Handlers.Player.Dying += OnDying;
-
         base.SubscribeEvents();
+        Log.Debug("Subscribed to events for MediGun.");
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Unsubscribes from hurting and dying events.
+    /// </summary>
     protected override void UnsubscribeEvents()
     {
+        Exiled.Events.Handlers.Player.Hurting -= OnHurting;
         if (HealZombies)
             Exiled.Events.Handlers.Player.Dying -= OnDying;
-
         base.UnsubscribeEvents();
+        Log.Debug("Unsubscribed from events for MediGun.");
     }
 
-    /// <inheritdoc/>
-    protected override void OnWaitingForPlayers()
+    /// <summary>
+    /// Handles the hurting event to heal allies or cure zombies.
+    /// </summary>
+    /// <param name="ev">The hurting event arguments.</param>
+    private void OnHurting(HurtingEventArgs ev)
     {
-        previousRoles.Clear();
+        if (!IsValidHurtingEvent(ev))
+            return;
 
-        base.OnWaitingForPlayers();
-    }
-
-    /// <inheritdoc/>
-    protected override void OnHurting(HurtingEventArgs ev)
-    {
-        if (Check(ev.Attacker.CurrentItem) && ev.Attacker != ev.Player && ev.DamageHandler.Base is FirearmDamageHandler firearmHandler && firearmHandler.WeaponType == ev.Attacker.CurrentItem.Type)
+        try
         {
-            if (Damage > 0)
-                ev.Amount = Damage;
-
             if (ev.Player.Role.Side == ev.Attacker.Role.Side)
             {
-                float amount = ev.Amount * HealingModifier;
-                ev.Player.Heal(amount);
-
+                HealAlly(ev.Player, ev.Amount);
                 ev.IsAllowed = false;
+                return;
             }
-            else if (ev.Player.Role == RoleTypeId.Scp0492 && HealZombies)
+
+            if (HealZombies && ev.Player.Role == RoleTypeId.Scp0492)
             {
-                if (!ev.Player.ActiveArtificialHealthProcesses.Any())
-                    ev.Player.AddAhp(0, ZombieHealingRequired, persistant: true);
-                ev.Player.ArtificialHealth += ev.Amount;
-
-                if (ev.Player.ArtificialHealth >= ev.Player.MaxArtificialHealth)
-                    DoReviveZombie(ev.Player, ev.Player);
-
+                HealZombie(ev.Player, ev.Amount, ev.Attacker);
                 ev.IsAllowed = false;
             }
         }
+        catch (Exception ex)
+        {
+            Log.Error($"Error in OnHurting for MediGun: {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
+    /// <summary>
+    /// Tracks the previous role of a dying zombie for curing purposes.
+    /// </summary>
+    /// <param name="ev">The dying event arguments.</param>
     private void OnDying(DyingEventArgs ev)
     {
-        if (!ev.Player.IsHuman || (ev.Attacker != null && ev.Attacker.Role != RoleTypeId.Scp049))
+        if (ev?.Player == null || ev.Player.Role != RoleTypeId.Scp0492 || ev.Attacker?.Role == RoleTypeId.Scp049)
             return;
 
-        if (!previousRoles.ContainsKey(ev.Player))
-            previousRoles.Add(ev.Player, RoleTypeId.None);
-
-        previousRoles[ev.Player] = ev.Player.Role;
+        _prevRoles[ev.Player] = ev.Player.Role;
+        Log.Debug($"Tracked previous role for player {ev.Player.Nickname} as {ev.Player.Role}.");
     }
 
-    private void DoReviveZombie(Player target, Player healer)
+    /// <summary>
+    /// Validates the hurting event for MediGun functionality.
+    /// </summary>
+    /// <param name="ev">The hurting event arguments.</param>
+    /// <returns>True if the event is valid, otherwise false.</returns>
+    private bool IsValidHurtingEvent(HurtingEventArgs ev)
     {
-        Log.Debug($"Reviving {target.Nickname}");
-        if (HealZombiesTeamCheck)
+        return ev?.Attacker?.CurrentItem != null &&
+               ev.Player != null &&
+               ev.Player.IsAlive &&
+               IsSelectedCustomItem(ev.Attacker.CurrentItem.Serial, _itemList);
+    }
+
+    /// <summary>
+    /// Heals an allied player based on the damage amount and healing modifier.
+    /// </summary>
+    /// <param name="player">The player to heal.</param>
+    /// <param name="amount">The base damage amount.</param>
+    private void HealAlly(Player player, float amount)
+    {
+        float healAmount = amount * HealingModifier;
+        player.Heal(healAmount);
+        Log.Debug($"Healed player {player.Nickname} for {healAmount} HP.");
+    }
+
+    /// <summary>
+    /// Applies healing to a zombie, potentially curing it if enough artificial health is accumulated.
+    /// </summary>
+    /// <param name="zombie">The zombie player to heal.</param>
+    /// <param name="amount">The base damage amount.</param>
+    /// <param name="healer">The player using the MediGun.</param>
+    private void HealZombie(Player zombie, float amount, Player healer)
+    {
+        if (!zombie.ActiveArtificialHealthProcesses.Any())
+            zombie.AddAhp(0f, ZombieHealingRequired, 0f);
+
+        zombie.ArtificialHealth += amount;
+
+        if (zombie.ArtificialHealth >= ZombieHealingRequired)
         {
-            target.Role.Set(healer.Role.Side == Side.Mtf ? RoleTypeId.NtfPrivate : RoleTypeId.ChaosConscript, RoleSpawnFlags.None);
-            return;
+            CureZombie(zombie, healer);
         }
 
-        if (previousRoles.ContainsKey(target))
-            target.Role.Set(previousRoles[target]);
+        Log.Debug($"Applied {amount} AHP to zombie {zombie.Nickname}. Current AHP: {zombie.ArtificialHealth}.");
+    }
+
+    /// <summary>
+    /// Cures a zombie, assigning a new role based on configuration.
+    /// </summary>
+    /// <param name="zombie">The zombie player to cure.</param>
+    /// <param name="healer">The player using the MediGun.</param>
+    private void CureZombie(Player zombie, Player healer)
+    {
+        try
+        {
+            RoleTypeId newRole = DetermineCuredRole(zombie, healer);
+            zombie.Role.Set(newRole);
+            _prevRoles.Remove(zombie); // Clean up to prevent memory leaks
+            Log.Debug($"Cured zombie {zombie.Nickname} to role {newRole}.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Error curing zombie {zombie.Nickname}: {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    /// <summary>
+    /// Determines the role to assign to a cured zombie based on configuration.
+    /// </summary>
+    /// <param name="zombie">The zombie player.</param>
+    /// <param name="healer">The player using the MediGun.</param>
+    /// <returns>The role to assign to the cured zombie.</returns>
+    private RoleTypeId DetermineCuredRole(Player zombie, Player healer)
+    {
+        if (HealZombiesTeamCheck)
+        {
+            return healer.Role.Side == Side.Mtf ? MtfCuredRole : ChaosCuredRole;
+        }
+
+        return _prevRoles.TryGetValue(zombie, out RoleTypeId oldRole) ? oldRole : DefaultCuredRole;
     }
 }
