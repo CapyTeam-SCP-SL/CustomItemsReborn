@@ -54,7 +54,7 @@ public class TranquilizerGun : CustomWeapon
     public override SpawnProperties? SpawnProperties { get; set; } = new()
     {
         Limit = 1,
-        DynamicSpawnPoints = new HashSet<DynamicSpawnPoint>
+        DynamicSpawnPoints = new List<DynamicSpawnPoint>
         {
             new()
             {
@@ -187,7 +187,7 @@ public class TranquilizerGun : CustomWeapon
         Item previousItem = player.CurrentItem;
         Vector3 previousScale = player.Scale;
         float newHealth = player.Health - Damage;
-        HashSet<StatusEffectBase> activeEffects = HashSetPool<StatusEffectBase>.Pool.Get();
+        List<StatusEffectBase> activeEffects = ListPool<StatusEffectBase>.Pool.Get();
         player.CurrentItem = null;
 
         if (newHealth <= 0)
@@ -265,7 +265,7 @@ public class TranquilizerGun : CustomWeapon
                 player.EnableEffect(effect, effect.Duration);
 
             activeTranqs.Remove(player);
-            HashSetPool<StatusEffectBase>.Pool.Return(activeEffects);
+            ListPool<StatusEffectBase>.Pool.Return(activeEffects);
         }
         catch (Exception e)
         {

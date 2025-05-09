@@ -80,7 +80,7 @@
       <HintPath>..\..\..\..\Desktop\Вещи Код\Pooling.dll</HintPath>
     </Reference>
     <Reference Include="RueI">
-      <HintPath>C:\Users\sakre\Downloads\Telegram Desktop\RueI.dll</HintPath>
+      <HintPath>..\..\..\..\Desktop\Вещи Код\RueI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
