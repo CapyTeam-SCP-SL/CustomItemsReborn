@@ -1,11 +1,11 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Coroutine.cs" company="CapyTeam">
-// Copyright (c) CapyTeam. All rights reserved.
+// <copyright file="Coroutine.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace CustomItems.API.Other
+namespace CustomItemsReborn.API.Other
 {
     using System;
     using System.Collections.Generic;
@@ -16,7 +16,7 @@ namespace CustomItems.API.Other
     using CustomPlayerEffects;
     using Exiled.API.Features;
     using Exiled.API.Features.Roles;
-    using lelele.API;
+    using CustomItemsReborn.API;
     using MEC;
     using RueI.Displays;
     using UnityEngine;

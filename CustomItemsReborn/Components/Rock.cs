@@ -1,11 +1,11 @@
 // -----------------------------------------------------------------------
-// <copyright file="Rock.cs" company="Joker119">
-// Copyright (c) Joker119. All rights reserved.
+// <copyright file="Rock.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace CustomItems.Components;
+namespace CustomItemsReborn.Components;
 
 using System;
 using System.Linq;

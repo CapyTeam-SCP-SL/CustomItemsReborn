@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("CapyTeam SCP:SL")]
 [assembly: AssemblyProduct("CustomItemsReborn")]
-[assembly: AssemblyCopyright("Copyright CapyTeam SCP:SL ©  2023 - 2025")]
+[assembly: AssemblyCopyright("Copyright © CapyTeam SCP:SL  2023 - 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

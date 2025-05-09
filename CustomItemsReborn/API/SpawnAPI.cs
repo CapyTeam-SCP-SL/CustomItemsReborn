@@ -1,11 +1,11 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="SpawnAPI.cs" company="Joker119">
-// Copyright (c) Joker119. All rights reserved.
+// <copyright file="SpawnAPI.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace CustomItems.API;
+namespace CustomItemsReborn.API;
 
 using System;
 using System.Collections.Generic;
@@ -13,6 +13,7 @@ using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Features.Pickups;
 using UnityEngine;
+using CustomItemsReborn.API.Interfaces;
 
 /// <summary>
 /// Provides utilities for spawning pickups and handling coordinate transformations in the game world.
@@ -43,7 +44,6 @@ public class SpawnAPI
             Pickup pickup = Pickup.CreateAndSpawn(itemType, globalPosition, rotation);
 
             itemList.Add(pickup.Serial);
-            CustomItemsAPI.CreatedCustomItems.Add(pickup.Serial);
 
             Log.Debug($"Spawned pickup {pickup.Type} at {pickup.Position} in {targetRoom.Name} with rotation {pickup.Rotation}");
             return pickup;

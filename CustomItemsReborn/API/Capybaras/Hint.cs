@@ -1,10 +1,10 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Hint.cs" company="CapyTeam">
-// Copyright (c) CapyTeam. All rights reserved.
+// <copyright file="Hint.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
-namespace CustomItems.API.Capybaras
+namespace CustomItemsReborn.API.Capybaras
 {
     using System;
     using System.Collections.Generic;

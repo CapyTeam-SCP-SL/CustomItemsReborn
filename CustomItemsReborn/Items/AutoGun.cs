@@ -1,11 +1,11 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="AutoGun.cs" company="Joker119">
-// Copyright (c) Joker119. All rights reserved.
+// <copyright file="AutoGun.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace CustomItems.Items;
+namespace CustomItemsReborn.Items;
 
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ using Exiled.API.Features.Items;
 using Exiled.API.Features.Spawn;
 using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs.Player;
-using global::CustomItems.API;
+using global::CustomItemsReborn.API;
 using PlayerRoles;
 using PlayerStatsSystem;
 using UnityEngine;

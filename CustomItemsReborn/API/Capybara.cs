@@ -1,11 +1,11 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Capybara.cs" company="CapyTeam">
-// Copyright (c) CapyTeam. All rights reserved.
+// <copyright file="Capybara.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace CustomItems.API
+namespace CustomItemsReborn.API
 {
     using RueI.Displays;
     using RueI.Elements;

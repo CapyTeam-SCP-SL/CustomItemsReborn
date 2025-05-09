@@ -1,13 +1,13 @@
 // -----------------------------------------------------------------------
-// <copyright file="Config.cs" company="Joker119">
-// Copyright (c) Joker119. All rights reserved.
+// <copyright file="Config.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
 #pragma warning disable SA1200
 
-namespace CustomItems;
+namespace CustomItemsReborn;
 
 using System;
 using System.Collections.Generic;
@@ -72,7 +72,7 @@ public class Config : IConfig
 
         string filePath = Path.Combine(ItemConfigFolder, ItemConfigFile);
         Log.Info($"{filePath}");
-        if (!File.Exists(filePath))
+            if (!File.Exists(filePath))
         {
             ItemConfigs = new Configs.Items();
             File.WriteAllText(filePath, Loader.Serializer.Serialize(ItemConfigs));

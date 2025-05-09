@@ -1,21 +1,21 @@
 // -----------------------------------------------------------------------
-// <copyright file="CustomItems.cs" company="Joker119">
-// Copyright (c) Joker119. All rights reserved.
+// <copyright file="CustomItems.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
 #pragma warning disable SA1200
-namespace CustomItems;
+namespace CustomItemsReborn;
 
 using System;
 using Events;
 using Exiled.API.Features;
 using Exiled.CustomItems.API.Features;
-using global::CustomItems.API;
-using global::CustomItems.API.Other;
+using global::CustomItemsReborn.API;
+using global::CustomItemsReborn.API.Other;
 using HarmonyLib;
-using lelele.API;
+using CustomItemsReborn.API;
 using Server = Exiled.Events.Handlers.Server;
 
 /// <summary>

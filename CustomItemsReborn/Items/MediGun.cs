@@ -1,11 +1,11 @@
 // -----------------------------------------------------------------------
-// <copyright file="MediGun.cs" company="Joker119">
-// Copyright (c) Joker119. All rights reserved.
+// <copyright file="MediGun.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace CustomItems.Items;
+namespace CustomItemsReborn.Items;
 
 using System.Collections.Generic;
 using System.ComponentModel;

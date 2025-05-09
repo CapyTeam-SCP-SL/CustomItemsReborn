@@ -1,13 +1,13 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="HintsAPI.cs" company="CapyTeam">
-// Copyright (c) CapyTeam. All rights reserved.
+// <copyright file="HintsAPI.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
 using RueI.Displays;
 
-namespace lelele.API;
+namespace CustomItemsReborn.API;
 
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ using Exiled.API.Enums;
 using Exiled.API.Features.Items;
 using MEC;
 using UnityEngine;
-using CustomItems.API;
+using CustomItemsReborn.API;
 using Display = RueI.Displays;
 
 /// <summary>

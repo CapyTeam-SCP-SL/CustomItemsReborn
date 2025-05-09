@@ -34,9 +34,6 @@
     <Reference Include="0Harmony, Version=2.3.6.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Lib.Harmony.2.3.6\lib\net48\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\Desktop\Вещи Код\Assembly-CSharp.dll</HintPath>
-    </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>..\..\..\..\Desktop\Вещи Код\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
@@ -74,13 +71,13 @@
       <HintPath>..\..\..\..\Desktop\Вещи Код\Mirror.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Posix">
-      <HintPath>..\..\..\..\Desktop\Вещи Код\9.6.0\Mono.Posix.dll</HintPath>
+      <HintPath>..\..\Desktop\Lazy Cherry Studios\Plugins\Ссылки\Mono.Posix.dll</HintPath>
     </Reference>
     <Reference Include="NorthwoodLib, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\ExMod.Exiled.9.6.0-beta8\lib\net48\NorthwoodLib.dll</HintPath>
     </Reference>
     <Reference Include="RueI">
-      <HintPath>..\..\..\..\Desktop\Вещи Код\RueI.dll</HintPath>
+      <HintPath>C:\Users\sakre\Downloads\Telegram Desktop\RueI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -91,10 +88,10 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>..\..\..\..\Desktop\Вещи Код\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>..\..\Desktop\Lazy Cherry Studios\Plugins\Ссылки\Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\..\..\Desktop\Вещи Код\UnityEngine.dll</HintPath>
+      <HintPath>..\..\Desktop\Lazy Cherry Studios\Plugins\Ссылки\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
       <HintPath>..\..\..\..\Desktop\Вещи Код\UnityEngine.AudioModule.dll</HintPath>
@@ -113,13 +110,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="API\CustomItemsAPI.cs" />
+    <Compile Include="API\Interfaces\CustomItemsAPI.cs" />
     <Compile Include="API\Other\Coroutine.cs" />
     <Compile Include="API\SpawnAPI.cs" />
     <Compile Include="API\HintsAPI.cs" />
     <Compile Include="API\Capybara.cs" />
     <Compile Include="API\Capybaras\Hint.cs" />
-    <Compile Include="Commands\C4Charge.cs" />
     <Compile Include="Components\Rock.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Configs\Items.cs" />
@@ -127,7 +123,6 @@
     <Compile Include="Events\ServerHandler.cs" />
     <Compile Include="Items\AntiMemeticPills.cs" />
     <Compile Include="Items\AutoGun.cs" />
-    <Compile Include="Items\C4Charge.cs" />
     <Compile Include="Items\DeflectorShield.cs" />
     <Compile Include="Items\EmpGrenade.cs" />
     <Compile Include="Items\GrenadeLauncher.cs" />
@@ -150,5 +145,6 @@
     <Analyzer Include="packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
     <Analyzer Include="packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

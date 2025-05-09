@@ -1,11 +1,11 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="CustomItemsAPI.cs" company="Joker119">
-// Copyright (c) Joker119. All rights reserved.
+// <copyright file="CustomItemsAPI.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace CustomItems.API;
+namespace CustomItemsReborn.API.Interfaces;
 
 using System;
 using System.Collections.Generic;
@@ -14,6 +14,7 @@ using Exiled.API.Features;
 using Exiled.API.Features.Items;
 using Exiled.API.Features.Pickups;
 using Exiled.Events.EventArgs.Player;
+using LabApi.Features.Wrappers;
 
 /// <summary>
 /// Abstract base class for managing custom items, providing event handling for item pickup and selection.
@@ -43,22 +44,25 @@ public abstract class CustomItemsAPI
     /// <summary>
     /// Gets the list of serial numbers for this custom item type.
     /// </summary>
-    protected abstract List<ushort> ItemList { get; }
+    public abstract List<ushort> ItemList { get; }
 
     /// <summary>
     /// Gets the list of serial numbers for all created custom items.
     /// </summary>
     public static List<ushort> CreatedCustomItems { get; } = new List<ushort>();
 
+    public virtual void CreateCustomItem() { }
+
     /// <summary>
     /// Subscribes to necessary events for handling custom item interactions.
     /// </summary>
-    public virtual void SubscribeEvents()
+    public virtual void SubscribeToEvents()
     {
         try
         {
             Exiled.Events.Handlers.Player.PickingUpItem += OnPickingUpItem;
             Exiled.Events.Handlers.Player.ChangedItem += OnPlayerChangedItem;
+            SubscribeEvents();
             Log.Debug($"Subscribed to events for {ItemName} custom item.");
         }
         catch (Exception ex)
@@ -70,12 +74,13 @@ public abstract class CustomItemsAPI
     /// <summary>
     /// Unsubscribes from all events to prevent memory leaks.
     /// </summary>
-    public virtual void UnsubscribeEvents()
+    public virtual void UnsubscribeToEvents()
     {
         try
         {
             Exiled.Events.Handlers.Player.PickingUpItem -= OnPickingUpItem;
             Exiled.Events.Handlers.Player.ChangedItem -= OnPlayerChangedItem;
+            UnsubscribeEvents();
             Log.Debug($"Unsubscribed from events for {ItemName} custom item.");
         }
         catch (Exception ex)
@@ -137,5 +142,9 @@ public abstract class CustomItemsAPI
         {
             Log.Error($"Error in OnPlayerChangedItem for {ItemName}: {ex.Message}");
         }
+
+
     }
+    protected virtual void SubscribeEvents() { }
+    protected virtual void UnsubscribeEvents() { }
 }

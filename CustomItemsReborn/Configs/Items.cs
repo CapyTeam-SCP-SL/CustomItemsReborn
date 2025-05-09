@@ -7,9 +7,9 @@
 
 #pragma warning disable SA1200
 
-using CustomItems.Items;
+using CustomItemsReborn.Items;
 
-namespace CustomItems.Configs;
+namespace CustomItemsReborn.Configs;
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -133,15 +133,6 @@ public class Items
     public List<Scp2818> Scp2818s { get; private set; } = new()
     {
         new Scp2818(),
-    };
-
-    /// <summary>
-    /// Gets the list of C4Charges.
-    /// </summary>
-    [Description("The list of C4Charges.")]
-    public List<C4Charge> C4Charges { get; private set; } = new()
-    {
-        new C4Charge(),
     };
 
     /// <summary>

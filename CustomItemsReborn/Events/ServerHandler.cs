@@ -1,14 +1,14 @@
 // -----------------------------------------------------------------------
-// <copyright file="ServerHandler.cs" company="Joker119">
-// Copyright (c) Joker119. All rights reserved.
+// <copyright file="ServerHandler.cs" company="CapyTeam SCP: SL">
+// Copyright (c) CapyTeam SCP: SL. All rights reserved.
 // Licensed under the CC BY-SA 3.0 license.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace CustomItems.Events;
+namespace CustomItemsReborn.Events;
 
-using E = lelele.API.HintsAPI;
-using global::CustomItems.API;
+using E = CustomItemsReborn.API.HintsAPI;
+using global::CustomItemsReborn.API;
 using static CustomItems;
 using Exiled.API.Features;
 
