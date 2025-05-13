@@ -9,15 +9,12 @@ namespace CustomItemsReborn.Items;
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using CustomItemsReborn.API;
+using CustomItemsReborn.API.Interfaces;
 using Exiled.API.Enums;
 using Exiled.API.Features;
-using Exiled.API.Features.Attributes;
 using Exiled.API.Features.Items;
-using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs.Player;
-using global::CustomItemsReborn.API;
 using PlayerRoles;
 using PlayerStatsSystem;
 using UnityEngine;
@@ -25,62 +22,91 @@ using UnityEngine;
 /// <summary>
 /// Represents a custom automatic firearm that targets and shoots enemies within range.
 /// </summary>
-[CustomItem(ItemType.GunCOM15)]
-public class AutoGun : CustomWeapon
+public class AutoGun : CustomItemsAPI
 {
-    /// <inheritdoc/>
-    public override uint Id { get; set; } = 17;
+    private readonly SpawnAPI _spawnApi = new();
 
     /// <inheritdoc/>
-    public override string Name { get; set; } = "AutoGun";
+    public override string ItemName => "AutoGun";
 
     /// <inheritdoc/>
-    public override string Description { get; set; } = "Fires at all enemies in range with a single trigger pull.";
+    public override ItemType ItemType => ItemType.GunCOM15;
 
     /// <inheritdoc/>
-    public override float Weight { get; set; } = 2.35f;
+    public override string PickupBroadcast => "<b>You picked up the AutoGun</b>";
 
     /// <inheritdoc/>
-    public override bool ShouldMessageOnGban => true;
+    public override string ChangeHint => "Fires at all enemies in range with a single trigger pull.";
 
     /// <inheritdoc/>
-    public override SpawnProperties? SpawnProperties { get; set; } = new()
-    {
-        Limit = 1,
-        DynamicSpawnPoints = new List<DynamicSpawnPoint>
-        {
-            new() { Chance = 100, Location = SpawnLocationType.Inside173Armory },
-        },
-    };
+    public override HashSet<ushort> ItemList => _serials;
 
-    /// <inheritdoc/>
-    public override float Damage { get; set; } = 25;
-
-    /// <inheritdoc/>
-    public override byte ClipSize { get; set; } = 5;
+    private readonly HashSet<ushort> _serials = new();
 
     /// <summary>
     /// Gets or sets a value indicating whether the gun can damage teammates.
     /// </summary>
-    [Description("Whether the gun can damage teammates.")]
     public bool TeamKill { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the maximum distance for targeting enemies.
     /// </summary>
-    [Description("The maximum distance at which the gun can target enemies.")]
     public float MaxDistance { get; set; } = 100f;
 
     /// <summary>
     /// Gets or sets a value indicating whether ammo is consumed per hit or per shot.
     /// </summary>
-    [Description("Whether ammo is consumed per hit (true) or per shot (false).")]
     public bool PerHitAmmo { get; set; } = true;
 
-    /// <inheritdoc/>
-    protected override void OnShooting(ShootingEventArgs ev)
+    /// <summary>
+    /// Gets or sets the damage per shot.
+    /// </summary>
+    public float Damage { get; set; } = 25;
+
+    /// <summary>
+    /// Gets or sets the clip size.
+    /// </summary>
+    public byte ClipSize { get; set; } = 5;
+
+    /// <summary>
+    /// Spawns the AutoGun in the game world.
+    /// </summary>
+    public override void CreateCustomItem()
     {
-        if (ev.Player?.CurrentItem is not Firearm firearm || ev.Player == null)
+        _spawnApi.CreateAndSpawnPickup(ItemType, RoomType.Lcz173, new Vector3(0, 1, 0), Quaternion.identity, _serials);
+        base.CreateCustomItem();
+    }
+
+    /// <summary>
+    /// Subscribes to the shooting event.
+    /// </summary>
+    protected override void SubscribeEvents()
+    {
+        Exiled.Events.Handlers.Player.Shooting += OnShooting;
+        base.SubscribeEvents();
+    }
+
+    /// <summary>
+    /// Unsubscribes from the shooting event.
+    /// </summary>
+    protected override void UnsubscribeEvents()
+    {
+        Exiled.Events.Handlers.Player.Shooting -= OnShooting;
+        base.UnsubscribeEvents();
+    }
+
+    /// <summary>
+    /// Handles the shooting event to automatically target enemies in range.
+    /// </summary>
+    private void OnShooting(ShootingEventArgs ev)
+    {
+        if (ev.Player?.CurrentItem == null || !IsSelectedCustomItem(ev.Player.CurrentItem.Serial, _serials))
+        {
+            ev.IsAllowed = false;
+            return;
+        }
+
+        if (ev.Player.CurrentItem is not Firearm firearm)
         {
             ev.IsAllowed = false;
             return;

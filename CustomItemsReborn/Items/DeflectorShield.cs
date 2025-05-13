@@ -9,130 +9,134 @@ namespace CustomItemsReborn.Items;
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using CustomItemsReborn.API;
+using CustomItemsReborn.API.Interfaces;
 using Exiled.API.Enums;
 using Exiled.API.Features;
-using Exiled.API.Features.Attributes;
-using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.EventArgs;
-using Exiled.CustomItems.API.Features;
 using Exiled.Events.EventArgs.Player;
-
 using MEC;
 using PlayerStatsSystem;
-using YamlDotNet.Serialization;
+using UnityEngine;
 
-using DamageHandlerBase = Exiled.API.Features.DamageHandlers.DamageHandlerBase;
-
-/// <inheritdoc />
-[CustomItem(ItemType.SCP268)]
-public class DeflectorShield : CustomItem
+/// <summary>
+/// Represents a deflector shield that reflects bullets back at the shooter.
+/// </summary>
+public class DeflectorShield : CustomItemsAPI
 {
-    private readonly List<Player> deflectorPlayers = new();
-
-    private readonly ItemType type = ItemType.SCP268;
-
-    /// <inheritdoc/>
-    public override uint Id { get; set; } = 18;
+    private readonly SpawnAPI _spawnApi = new();
+    private readonly List<Player> _deflectorPlayers = new();
 
     /// <inheritdoc/>
-    [YamlIgnore]
-    public override ItemType Type { get => type; set => throw new ArgumentException("You cannot change the ItemType of this item."); }
+    public override string ItemName => "Deflector Shield";
 
     /// <inheritdoc/>
-    public override string Name { get; set; } = "Deflector shield";
+    public override ItemType ItemType => ItemType.SCP268;
 
     /// <inheritdoc/>
-    public override string Description { get; set; } = "A deflector shield that reflects bullets back at the shooter";
+    public override string PickupBroadcast => "<b>You picked up the Deflector Shield</b>";
 
     /// <inheritdoc/>
-    public override float Weight { get; set; } = 1.65f;
+    public override string ChangeHint => "Reflects bullets back at the shooter.";
 
     /// <inheritdoc/>
-    public override SpawnProperties? SpawnProperties { get; set; } = new()
-    {
-        Limit = 1,
-        DynamicSpawnPoints = new List<DynamicSpawnPoint>
-        {
-            new()
-            {
-                Chance = 10,
-                Location = SpawnLocationType.InsideHidChamber,
-            },
-        },
-    };
+    public override HashSet<ushort> ItemList => _serials;
+
+    private readonly HashSet<ushort> _serials = new();
 
     /// <summary>
-    /// Gets or sets how long the deflector shield can be wore, before automaticly player takes it off. (set to 0 for no limit).
+    /// Gets or sets how long the deflector shield can be worn before automatically being removed (set to 0 for no limit).
     /// </summary>
-    [Description("How long the deflector shield can be wore, before automaticly player takes it off. (set to 0 for no limit)")]
     public float Duration { get; set; } = 15f;
 
     /// <summary>
-    /// Gets or sets By what will the Damage be multiplied.
+    /// Gets or sets the damage multiplier for reflected bullets.
     /// </summary>
-    [Description("By what will the Damage be multiplied")]
     public float Multiplier { get; set; } = 1f;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Spawns the Deflector Shield in the game world.
+    /// </summary>
+    public override void CreateCustomItem()
+    {
+        _spawnApi.CreateAndSpawnPickup(ItemType, RoomType.HczHid, new Vector3(0, 1, 0), Quaternion.identity, _serials);
+        base.CreateCustomItem();
+    }
+
+    /// <summary>
+    /// Subscribes to necessary events.
+    /// </summary>
     protected override void SubscribeEvents()
     {
         Exiled.Events.Handlers.Player.UsedItem += OnItemUsed;
         Exiled.Events.Handlers.Player.Destroying += OnDestroying;
         Exiled.Events.Handlers.Player.Hurting += OnHurt;
-
+        Exiled.Events.Handlers.Player.DroppingItem += OnDropping;
+        Exiled.Events.Handlers.Player.Dying += OnDying;
         base.SubscribeEvents();
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Unsubscribes from events.
+    /// </summary>
     protected override void UnsubscribeEvents()
     {
         Exiled.Events.Handlers.Player.UsedItem -= OnItemUsed;
         Exiled.Events.Handlers.Player.Destroying -= OnDestroying;
         Exiled.Events.Handlers.Player.Hurting -= OnHurt;
-
+        Exiled.Events.Handlers.Player.DroppingItem -= OnDropping;
+        Exiled.Events.Handlers.Player.Dying -= OnDying;
         base.UnsubscribeEvents();
     }
 
-    /// <inheritdoc/>
-    protected override void OnDropping(DroppingItemEventArgs ev)
+    /// <summary>
+    /// Clears the list of players with active shields at the start of a new round.
+    /// </summary>
+    public override void Initialize()
     {
-        if (deflectorPlayers.Contains(ev.Player))
-        {
-            ev.IsAllowed = false;
-
-            deflectorPlayers.Remove(ev.Player);
-        }
+        _deflectorPlayers.Clear();
+        base.Initialize();
     }
 
-    /// <inheritdoc/>
-    protected override void OnWaitingForPlayers()
+    /// <summary>
+    /// Prevents dropping the shield if active.
+    /// </summary>
+    private void OnDropping(DroppingItemEventArgs ev)
     {
-        deflectorPlayers.Clear();
-
-        base.OnWaitingForPlayers();
-    }
-
-    /// <inheritdoc/>
-    protected override void OnOwnerDying(OwnerDyingEventArgs ev)
-    {
-        if (deflectorPlayers.Contains(ev.Player))
-            deflectorPlayers.Remove(ev.Player);
-    }
-
-    private void OnDestroying(DestroyingEventArgs ev)
-    {
-        if (deflectorPlayers.Contains(ev.Player))
-            deflectorPlayers.Remove(ev.Player);
-    }
-
-    private void OnItemUsed(UsedItemEventArgs ev)
-    {
-        if (!Check(ev.Player.CurrentItem))
+        if (!IsSelectedCustomItem(ev.Item.Serial, _serials) || !_deflectorPlayers.Contains(ev.Player))
             return;
 
-        if (!deflectorPlayers.Contains(ev.Player))
-            deflectorPlayers.Add(ev.Player);
+        ev.IsAllowed = false;
+        _deflectorPlayers.Remove(ev.Player);
+    }
+
+    /// <summary>
+    /// Removes the player from the active shield list when they die.
+    /// </summary>
+    private void OnDying(DyingEventArgs ev)
+    {
+        if (_deflectorPlayers.Contains(ev.Player))
+            _deflectorPlayers.Remove(ev.Player);
+    }
+
+    /// <summary>
+    /// Removes the player from the active shield list when they disconnect.
+    /// </summary>
+    private void OnDestroying(DestroyingEventArgs ev)
+    {
+        if (_deflectorPlayers.Contains(ev.Player))
+            _deflectorPlayers.Remove(ev.Player);
+    }
+
+    /// <summary>
+    /// Activates the shield when the item is used.
+    /// </summary>
+    private void OnItemUsed(UsedItemEventArgs ev)
+    {
+        if (!IsSelectedCustomItem(ev.Player.CurrentItem.Serial, _serials))
+            return;
+
+        if (!_deflectorPlayers.Contains(ev.Player))
+            _deflectorPlayers.Add(ev.Player);
 
         ev.Player.DisableEffect(EffectType.Invisible);
 
@@ -140,17 +144,20 @@ public class DeflectorShield : CustomItem
         {
             Timing.CallDelayed(Duration, () =>
             {
-                deflectorPlayers.Remove(ev.Player);
+                _deflectorPlayers.Remove(ev.Player);
             });
         }
     }
 
+    /// <summary>
+    /// Reflects bullet damage back to the attacker if the shield is active.
+    /// </summary>
     private void OnHurt(HurtingEventArgs ev)
     {
-        if (deflectorPlayers.Contains(ev.Player) && ev.DamageHandler.Base is FirearmDamageHandler && ev.Player != ev.Attacker)
-        {
-            ev.IsAllowed = false;
-            ev.Attacker.Hurt(ev.Player, ev.Amount * Multiplier, ev.DamageHandler.Type, DamageHandlerBase.CassieAnnouncement.Default);
-        }
+        if (!_deflectorPlayers.Contains(ev.Player) || ev.DamageHandler.Base is not FirearmDamageHandler || ev.Player == ev.Attacker)
+            return;
+
+        ev.IsAllowed = false;
+        ev.Attacker.Hurt(ev.Player, ev.Amount * Multiplier, ev.DamageHandler.Type, DamageHandlerBase.CassieAnnouncement.Default);
     }
 }

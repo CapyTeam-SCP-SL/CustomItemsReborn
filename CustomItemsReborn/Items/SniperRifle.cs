@@ -7,80 +7,116 @@
 
 namespace CustomItemsReborn.Items;
 
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using CustomItemsReborn.API;
+using CustomItemsReborn.API.Interfaces;
 using Exiled.API.Enums;
-using Exiled.API.Features.Attributes;
-using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
+using Exiled.API.Features;
+using Exiled.API.Features.Items;
 using Exiled.Events.EventArgs.Player;
 using InventorySystem.Items.Firearms.Attachments;
 using PlayerStatsSystem;
-using YamlDotNet.Serialization;
+using UnityEngine;
 
-/// <inheritdoc />
-[CustomItem(ItemType.GunE11SR)]
-public class SniperRifle : CustomWeapon
+/// <summary>
+/// Represents a modified E-11 rifle that fires high-velocity sniper rounds.
+/// </summary>
+public class SniperRifle : CustomItemsAPI
 {
-    /// <inheritdoc/>
-    public override uint Id { get; set; } = 10;
+    private readonly SpawnAPI _spawnApi = new();
 
     /// <inheritdoc/>
-    public override string Name { get; set; } = "SR-119";
+    public override string ItemName => "SR-119";
 
     /// <inheritdoc/>
-    public override string Description { get; set; } = "This modified E-11 Rifle fires high-velocity anti-personnel sniper rounds.";
+    public override ItemType ItemType => ItemType.GunE11SR;
 
     /// <inheritdoc/>
-    public override float Weight { get; set; } = 3.25f;
+    public override string PickupBroadcast => "<b>You picked up the SR-119 Sniper Rifle</b>";
 
     /// <inheritdoc/>
-    public override byte ClipSize { get; set; } = 1;
+    public override string ChangeHint => "Fires high-velocity anti-personnel sniper rounds.";
 
     /// <inheritdoc/>
-    public override bool ShouldMessageOnGban { get; } = true;
+    public override HashSet<ushort> ItemList => _serials;
 
-    /// <inheritdoc/>
-    [YamlIgnore]
-    public override float Damage { get; set; }
+    private readonly HashSet<ushort> _serials = new();
 
-    /// <inheritdoc/>
-    public override SpawnProperties? SpawnProperties { get; set; } = new()
-    {
-        Limit = 1,
-        DynamicSpawnPoints = new List<DynamicSpawnPoint>
-        {
-            new()
-            {
-                Chance = 100,
-                Location = SpawnLocationType.InsideHidChamber,
-            },
-            new()
-            {
-                Chance = 40,
-                Location = SpawnLocationType.InsideHczArmory,
-            },
-        },
-    };
+    /// <summary>
+    /// Gets or sets the damage multiplier for the sniper rifle.
+    /// </summary>
+    public float DamageMultiplier { get; set; } = 7.5f;
 
-    /// <inheritdoc />
-    [YamlIgnore]
-    public override AttachmentName[] Attachments { get; set; } = new[]
+    /// <summary>
+    /// Gets or sets the clip size.
+    /// </summary>
+    public byte ClipSize { get; set; } = 1;
+
+    /// <summary>
+    /// Gets the attachments for the sniper rifle.
+    /// </summary>
+    public AttachmentName[] Attachments { get; } = new[]
     {
         AttachmentName.ExtendedBarrel,
         AttachmentName.ScopeSight,
     };
 
     /// <summary>
-    /// Gets or sets the amount of extra damage this weapon does, as a multiplier.
+    /// Spawns the Sniper Rifle in the game world.
     /// </summary>
-    [Description("The amount of extra damage this weapon does, as a multiplier.")]
-    public float DamageMultiplier { get; set; } = 7.5f;
-
-    /// <inheritdoc/>
-    protected override void OnHurting(HurtingEventArgs ev)
+    public override void CreateCustomItem()
     {
-        if (ev.Attacker != ev.Player && ev.DamageHandler.Base is FirearmDamageHandler firearmDamageHandler && firearmDamageHandler.WeaponType == ev.Attacker.CurrentItem.Type)
-            ev.Amount *= DamageMultiplier;
+        _spawnApi.CreateAndSpawnPickup(ItemType, RoomType.HczHid, new Vector3(0, 1, 0), Quaternion.identity, _serials);
+        _spawnApi.CreateAndSpawnPickup(ItemType, RoomType.HczArmory, new Vector3(0, 1, 0), Quaternion.identity, _serials);
+        base.CreateCustomItem();
+    }
+
+    /// <summary>
+    /// Subscribes to the hurting event.
+    /// </summary>
+    protected override void SubscribeEvents()
+    {
+        Exiled.Events.Handlers.Player.Hurting += OnHurting;
+        base.SubscribeEvents();
+    }
+
+    /// <summary>
+    /// Unsubscribes from the hurting event.
+    /// </summary>
+    protected override void UnsubscribeEvents()
+    {
+        Exiled.Events.Handlers.Player.Hurting -= OnHurting;
+        base.UnsubscribeEvents();
+    }
+
+    /// <summary>
+    /// Applies the damage multiplier when the sniper rifle is used.
+    /// </summary>
+    private void OnHurting(HurtingEventArgs ev)
+    {
+        if (ev.Attacker == null || ev.Attacker == ev.Player || ev.DamageHandler.Base is not FirearmDamageHandler firearmDamageHandler)
+            return;
+
+        if (!IsSelectedCustomItem(ev.Attacker.CurrentItem.Serial, _serials) || firearmDamageHandler.WeaponType != ItemType)
+            return;
+
+        ev.Amount *= DamageMultiplier;
+    }
+
+    /// <summary>
+    /// Initializes the sniper rifle with attachments.
+    /// </summary>
+    public override void Initialize()
+    {
+        foreach (var serial in _serials)
+        {
+            if (Item.Get(serial) is Firearm firearm)
+            {
+                foreach (var attachment in Attachments)
+                    firearm.AddAttachment(attachment);
+            }
+        }
+        base.Initialize();
     }
 }
