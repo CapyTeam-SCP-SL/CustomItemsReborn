@@ -113,6 +113,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\CustomItem.cs" />
+    <Compile Include="API\CustomItemExtensions.cs" />
     <Compile Include="API\Interfaces\CustomItemsAPI.cs" />
     <Compile Include="API\Other\Coroutine.cs" />
     <Compile Include="API\SpawnAPI.cs" />
@@ -125,7 +127,6 @@
     <Compile Include="CustomItems.cs" />
     <Compile Include="Events\ServerHandler.cs" />
     <Compile Include="Items\AntiMemeticPills.cs" />
-    <Compile Include="Items\AutoGun.cs" />
     <Compile Include="Items\DeflectorShield.cs" />
     <Compile Include="Items\EmpGrenade.cs" />
     <Compile Include="Items\GrenadeLauncher.cs" />

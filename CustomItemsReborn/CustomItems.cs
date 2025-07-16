@@ -43,12 +43,12 @@ public class CustomItems : Plugin<Config>
     /// <summary>
     /// Gets the version of the plugin.
     /// </summary>
-    public override Version Version { get; } = new Version(7, 3, 0);
+    public override Version Version { get; } = new Version(8, 0, 0);
 
     /// <summary>
     /// Gets the minimum required EXILED version.
     /// </summary>
-    public override Version RequiredExiledVersion { get; } = new(9, 6, 0);
+    public override Version RequiredExiledVersion { get; } = new(9, 6, 2);
 
     /// <summary>
     /// Initializes the plugin, registering custom items, event handlers, and caching UI elements.
@@ -68,7 +68,7 @@ public class CustomItems : Plugin<Config>
         Config.LoadItems();
 
         Log.Debug("Registering items...");
-        CustomItem.RegisterItems(overrideClass: Config.ItemConfigs);
+        API.CustomItem.RegisterAll();
 
         // Subscribe to server events
         Server.ReloadedConfigs += serverHandler.OnReloadingConfigs;
@@ -124,7 +124,7 @@ public class CustomItems : Plugin<Config>
     public override void OnDisabled()
     {
         // Unregister custom items
-        CustomItem.UnregisterItems();
+        API.CustomItem.UnregisterAll();
 
         HintsAPI.CachedElements.Clear();
 

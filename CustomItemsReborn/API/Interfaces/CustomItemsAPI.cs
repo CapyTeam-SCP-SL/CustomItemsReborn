@@ -18,6 +18,7 @@ using Exiled.Events.EventArgs.Player;
 /// <summary>
 /// Abstract base class for custom items, providing event handling and utilities for item pickup and selection.
 /// </summary>
+[Obsolete("Use CustomItemsReborn.API.CustomItem")]
 public abstract class CustomItemsAPI
 {
     private static readonly HashSet<ushort> CreatedCustomItems = new();

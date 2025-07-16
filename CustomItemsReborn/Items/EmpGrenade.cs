@@ -1,278 +1,93 @@
-// -----------------------------------------------------------------------
-// <copyright file="EmpGrenade.cs" company="CapyTeam SCP: SL">
-// Copyright (c) CapyTeam SCP: SL. All rights reserved.
-// Licensed under the CC BY-SA 3.0 license.
-// </copyright>
-// -----------------------------------------------------------------------
-
-namespace CustomItemsReborn.Items;
-
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using Exiled.API.Enums;
-using Exiled.API.Extensions;
 using Exiled.API.Features;
-using Exiled.API.Features.Attributes;
-using Exiled.API.Features.Doors;
 using Exiled.API.Features.Items;
-using Exiled.API.Features.Roles;
-using Exiled.API.Features.Spawn;
-using Exiled.CustomItems.API.Features;
+using Exiled.API.Features.Pickups.Projectiles;
 using Exiled.Events.EventArgs.Map;
-using Exiled.Events.EventArgs.Player;
-using Exiled.Events.EventArgs.Scp079;
-using Exiled.Events.Handlers;
-using InventorySystem.Items.Firearms.Attachments;
-using InventorySystem.Items.Firearms.Attachments.Components;
 using MEC;
 using UnityEngine;
-using UnityEngine.Assertions.Must;
-using Camera = Exiled.API.Features.Camera;
-using CameraType = Exiled.API.Enums.CameraType;
-using Item = Exiled.API.Features.Items.Item;
-using KeycardPermissions = Interactables.Interobjects.DoorUtils.DoorPermissionFlags;
-using Player = Exiled.API.Features.Player;
+using CustomItemsReborn.API;
+using LabApi.Features.Wrappers;
+using Door = Exiled.API.Features.Doors.Door;
 
-/// <inheritdoc />
-[CustomItem(ItemType.GrenadeFlash)]
-public class EmpGrenade : CustomGrenade
+namespace CustomItemsReborn.Items
 {
-    private static readonly List<Room> LockedRooms079 = new();
-
-    private readonly List<Door> lockedDoors = new();
-
-    private readonly List<TeslaGate> disabledTeslaGates = new();
-
-    /// <inheritdoc/>
-    public override uint Id { get; set; } = 0;
-
-    /// <inheritdoc/>
-    public override string Name { get; set; } = "EM-119";
-
-    /// <inheritdoc/>
-    public override float Weight { get; set; } = 1.15f;
-
-    /// <inheritdoc/>
-    public override SpawnProperties? SpawnProperties { get; set; } = new()
+    public class EmpGrenade : CustomItem
     {
-        Limit = 1,
-        DynamicSpawnPoints = new List<DynamicSpawnPoint>
+        private readonly List<Exiled.API.Features.TeslaGate> _disabledTeslas = new();
+        private bool _openLockedDoors;
+        private bool _openKeycardDoors;
+        private List<DoorType> _blackListedDoorTypes;
+        private bool _disableTeslaGates;
+        private float _duration;
+
+        public override string Id => "EM-119";
+        public override string Name => "EMP Grenade";
+        public override ItemType BaseType => ItemType.GrenadeHE;
+
+        public override void Initialize()
         {
-            new()
-            {
-                Chance = 100,
-                Location = SpawnLocationType.Inside079Armory,
-            },
-            new()
-            {
-                Chance = 100,
-                Location = SpawnLocationType.Inside173Gate,
-            },
-        },
-        StaticSpawnPoints = new List<StaticSpawnPoint>
-        {
-            new()
-            {
-                Chance = 50,
-                Name = "somewhere",
-                Position = new Vector3(100, 25, 40),
-            },
-        },
-    };
+            var config = CustomItems.Instance.Config.ItemConfigs.EmpGrenade;
+            _openLockedDoors = config.OpenLockedDoors;
+            _openKeycardDoors = config.OpenKeycardDoors;
+            _blackListedDoorTypes = config.BlackListedDoorTypes;
+            _disableTeslaGates = config.DisableTeslaGates;
+            _duration = config.Duration;
+            PickupBroadcast = config.PickupBroadcast;
+            ChangeHint = config.ChangeHint;
 
-    /// <inheritdoc/>
-    public override string Description { get; set; } = "This flashbang has been modified to emit a short-range EMP when it detonates. When detonated, any lights, doors, cameras and in the room, as well as all speakers in the facility, will be disabled for a short time.";
-
-    /// <inheritdoc/>
-    public override bool ExplodeOnCollision { get; set; } = true;
-
-    /// <inheritdoc/>
-    public override float FuseTime { get; set; } = 1.5f;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether or not EMP grenades will open doors that are currently locked.
-    /// </summary>
-    [Description("Whether or not EMP grenades will open doors that are currently locked.")]
-    public bool OpenLockedDoors { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether or not EMP grenades will open doors that require keycard permissions.
-    /// </summary>
-    [Description("Whether or not EMP grenades will open doors that require keycard permissions.")]
-    public bool OpenKeycardDoors { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets a value indicating what doors will never be opened by EMP grenades.
-    /// </summary>
-    [Description("A List of door names that will not be opened with EMP grenades regardless of the above configs.")]
-    public List<DoorType> BlackListedDoorTypes { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets a value indicating whether if tesla gates will get disabled.
-    /// </summary>
-    [Description("Whether or not EMP grenades disable tesla gates in the rooms the affect, for their duration.")]
-    public bool DisableTeslaGates { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets how long the EMP effect should last on the rooms affected.
-    /// </summary>
-    [Description("How long the EMP effect should last on the rooms affected.")]
-    public float Duration { get; set; } = 20f;
-
-    /// <inheritdoc/>
-    protected override void SubscribeEvents()
-    {
-        Scp079.ChangingCamera += OnChangingCamera;
-        Scp079.TriggeringDoor += OnInteractingDoor;
-
-        if (DisableTeslaGates)
-            Exiled.Events.Handlers.Player.TriggeringTesla += OnTriggeringTesla;
-
-        base.SubscribeEvents();
-    }
-
-    /// <inheritdoc/>
-    protected override void UnsubscribeEvents()
-    {
-        Scp079.ChangingCamera -= OnChangingCamera;
-        Scp079.TriggeringDoor -= OnInteractingDoor;
-
-        if (DisableTeslaGates)
-            Exiled.Events.Handlers.Player.TriggeringTesla -= OnTriggeringTesla;
-
-        base.UnsubscribeEvents();
-    }
-
-    /// <inheritdoc/>
-    protected override void OnExploding(ExplodingGrenadeEventArgs ev)
-    {
-        ev.IsAllowed = false;
-        Room room = Room.FindParentRoom(ev.Projectile.GameObject);
-        TeslaGate? gate = null;
-
-        Log.Debug($"{ev.Projectile.GameObject.transform.position} - {room.Position} - {Room.List.Count()}");
-
-        LockedRooms079.Add(room);
-
-        room.TurnOffLights(Duration);
-
-        if (DisableTeslaGates)
-        {
-            foreach (TeslaGate teslaGate in TeslaGate.List)
-            {
-                if (Room.FindParentRoom(teslaGate.GameObject) == room)
-                {
-                    disabledTeslaGates.Add(teslaGate);
-                    gate = teslaGate;
-                    break;
-                }
-            }
+            SpawnMultipleInRoom(RoomType.HczArmory, new[] { Vector3.zero });
         }
 
-        Log.Debug($"{room.Doors.Count()} - {room.Type}");
-
-        foreach (Door door in room.Doors)
+        protected override void SubscribeEvents()
         {
-            if (door == null ||
-                BlackListedDoorTypes.Contains(door.Type) ||
-                (door.DoorLockType > 0 && !OpenLockedDoors) ||
-                (door.RequiredPermissions != KeycardPermissions.None && !OpenKeycardDoors) || door.Type.IsElevator())
-                continue;
-
-            Log.Debug("Opening a door!");
-
-            door.IsOpen = true;
-            door.ChangeLock(DoorLockType.NoPower);
-
-            if (!lockedDoors.Contains(door))
-                lockedDoors.Add(door);
-
-            Timing.CallDelayed(Duration, () =>
-            {
-                door.Unlock();
-                lockedDoors.Remove(door);
-            });
+            Exiled.Events.Handlers.Map.ExplodingGrenade += OnExploded;
         }
 
-        foreach (Player player in Player.List)
+        protected override void UnsubscribeEvents()
         {
-            if (player.Role.Is(out Scp079Role scp079))
-            {
-                if (scp079.Camera != null && scp079.Camera.Room == room)
-                    scp079.Camera = Camera.Get(CameraType.Hcz079ContChamber);
-            }
-
-            if (player.CurrentRoom != room)
-                continue;
-
-            foreach (Item item in player.Items)
-            {
-                switch (item)
-                {
-                    case Radio radio:
-                        radio.IsEnabled = false;
-                        break;
-                    case Firearm firearm:
-                        {
-                            foreach (Attachment attachment in firearm.Attachments)
-                            {
-                                if (attachment.Name == AttachmentName.Flashlight)
-                                    attachment.IsEnabled = false;
-                            }
-
-                            break;
-                        }
-                }
-            }
+            Exiled.Events.Handlers.Map.ExplodingGrenade -= OnExploded;
         }
 
-        Timing.CallDelayed(Duration, () =>
+        private void OnExploded(ExplodingGrenadeEventArgs ev)
         {
-            try
-            {
-                LockedRooms079.Remove(room);
-            }
-            catch (Exception e)
-            {
-                Log.Debug($"REMOVING LOCKED ROOM: {e}");
-            }
+            if (!Check(ev.Projectile))
+                return;
 
-            if (gate != null)
+            if (_openLockedDoors || _openKeycardDoors)
             {
-                try
+                foreach (Door door in Door.List.Where(door => Vector3.Distance(door.Position, ev.Projectile.Position) <= 10f))
                 {
-                    disabledTeslaGates.Remove(gate);
-                }
-                catch (Exception e)
-                {
-                    Log.Debug($"REMOVING DISABLED TESLA: {e}");
+                    if (_blackListedDoorTypes.Contains(door.Type))
+                        continue;
+
+                    if (_openLockedDoors && door.IsLocked)
+                        door.Unlock();
+
+                    if (_openKeycardDoors && door.KeycardPermissions != KeycardPermissions.None)
+                        door.ChangeLock(DoorLockType.None);
                 }
             }
-        });
-    }
 
-    private static void OnChangingCamera(ChangingCameraEventArgs ev)
-    {
-        Room room = ev.Camera.Room;
+            if (_disableTeslaGates)
+            {
+                foreach (var tesla in Exiled.API.Features.TeslaGate.List.Where(tesla => Vector3.Distance(tesla.Position, ev.Projectile.Position) <= 10f))
+                {
+                    tesla.Base.enabled = false;
+                    _disabledTeslas.Add(tesla);
+                    Timing.CallDelayed(_duration, () => ReEnableTesla(tesla));
+                }
+            }
 
-        if (room != null && LockedRooms079.Contains(room))
-            ev.IsAllowed = false;
-    }
+            ev.Projectile.FuseTime = 0f;
+                Timing.CallDelayed(0.1f, () => ev.Projectile.Destroy());
+        }
 
-    private void OnInteractingDoor(TriggeringDoorEventArgs ev)
-    {
-        if (lockedDoors.Contains(ev.Door))
-            ev.IsAllowed = false;
-    }
-
-    private void OnTriggeringTesla(TriggeringTeslaEventArgs ev)
-    {
-        foreach (TeslaGate gate in TeslaGate.List)
+        private void ReEnableTesla(Exiled.API.Features.TeslaGate tesla)
         {
-            if (Room.FindParentRoom(gate.GameObject) == ev.Player.CurrentRoom && disabledTeslaGates.Contains(gate))
-                ev.IsAllowed = false;
+            if (_disabledTeslas.Remove(tesla))
+                tesla.Base.enabled = true;
         }
     }
 }
