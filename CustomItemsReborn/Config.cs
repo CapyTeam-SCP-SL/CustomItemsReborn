@@ -28,7 +28,7 @@ namespace CustomItemsReborn
         /// Gets the item configuration settings.
         /// </summary>
         [YamlIgnore]
-        public Configs.Items ItemConfigs { get; private set; } = null!;
+        public CustomItemsReborn.Configs.Configs.Items ItemConfigs { get; private set; } = null!;
 
         /// <summary>
         /// Gets or sets a value indicating whether the plugin is enabled.
@@ -122,7 +122,7 @@ namespace CustomItemsReborn
                 else
                 {
                     // Load and update configurations
-                    ItemConfigs = Loader.Deserializer.Deserialize<Configs.Items>(File.ReadAllText(filePath));
+                    ItemConfigs = Loader.Deserializer.Deserialize<CustomItemsReborn.Configs.Configs.Items>(File.ReadAllText(filePath));
                     File.WriteAllText(filePath, Loader.Serializer.Serialize(ItemConfigs));
                     Log.Info($"Successfully loaded item configurations from: {filePath}");
                 }
@@ -138,18 +138,18 @@ namespace CustomItemsReborn
         /// Creates a default item configuration with sensible values for all custom items.
         /// </summary>
         /// <returns>A new instance of <see cref="Configs.Items"/> with default settings.</returns>
-        private Configs.Items CreateDefaultItemConfigs()
+        private CustomItemsReborn.Configs.Configs.Items CreateDefaultItemConfigs()
         {
-            return new Configs.Items
+            return new CustomItemsReborn.Configs.Configs.Items
             {
-                SniperRifle = new Configs.SniperRifleConfig
+                SniperRifle = new CustomItemsReborn.Configs.Configs.SniperRifleConfig
                 {
                     DamageMultiplier = 7.5f,
                     ClipSize = 1,
                     PickupBroadcast = "<b>You picked up the SR-119 Sniper Rifle</b>",
                     ChangeHint = "Fires high-velocity anti-personnel sniper rounds."
                 },
-                TranquilizerGun = new Configs.TranquilizerGunConfig
+                TranquilizerGun = new CustomItemsReborn.Configs.Configs.TranquilizerGunConfig
                 {
                     ResistantScps = true,
                     Duration = 5f,
@@ -161,14 +161,14 @@ namespace CustomItemsReborn
                     PickupBroadcast = "<b>You have picked up TG-119</b>",
                     ChangeHint = "Fires non-lethal tranquilizing darts. Unreliable against SCPs."
                 },
-                DeflectorShield = new Configs.DeflectorShieldConfig
+                DeflectorShield = new CustomItemsReborn.Configs.Configs.DeflectorShieldConfig
                 {
                     Duration = 15f,
                     Multiplier = 1f,
                     PickupBroadcast = "<b>You picked up the Deflector Shield</b>",
                     ChangeHint = "Deflects incoming bullets for a short duration."
                 },
-                Scp2818 = new Configs.Scp2818Config
+                Scp2818 = new CustomItemsReborn.Configs.Configs.Scp2818Config
                 {
                     TickFrequency = 0.00025f,
                     MaxDistancePerTick = 0.5f,
@@ -177,13 +177,13 @@ namespace CustomItemsReborn
                     PickupBroadcast = "<b>You picked up SCP-2818</b>",
                     ChangeHint = "Shoots the user as a projectile."
                 },
-                AntiMemeticPills = new Configs.AntiMemeticPillsConfig
+                AntiMemeticPills = new CustomItemsReborn.Configs.Configs.AntiMemeticPillsConfig
                 {
                     AmnesiaVisionDuration = 10f,
                     PickupBroadcast = "<b>You picked up AM-119</b>",
                     ChangeHint = "Temporarily protects against Amnesia effects."
                 },
-                EmpGrenade = new Configs.EmpGrenadeConfig
+                EmpGrenade = new CustomItemsReborn.Configs.Configs.EmpGrenadeConfig
                 {
                     OpenLockedDoors = true,
                     OpenKeycardDoors = true,
@@ -193,14 +193,14 @@ namespace CustomItemsReborn
                     PickupBroadcast = "<b>You picked up EM-119</b>",
                     ChangeHint = "Disables electronics and opens doors in the blast radius."
                 },
-                GrenadeLauncher = new Configs.GrenadeLauncherConfig
+                GrenadeLauncher = new CustomItemsReborn.Configs.Configs.GrenadeLauncherConfig
                 {
                     UseGrenades = true,
                     IgnoreModded = false,
                     PickupBroadcast = "<b>You picked up GL-119</b>",
                     ChangeHint = "Launches explosive grenades."
                 },
-                ImplosionGrenade = new Configs.ImplosionGrenadeConfig
+                ImplosionGrenade = new CustomItemsReborn.Configs.Configs.ImplosionGrenadeConfig
                 {
                     DamageModifier = 0.05f,
                     SuctionCount = 90,
@@ -210,7 +210,7 @@ namespace CustomItemsReborn
                     PickupBroadcast = "<b>You picked up IG-119</b>",
                     ChangeHint = "Pulls players toward the explosion center."
                 },
-                LethalInjection = new Configs.LethalInjectionConfig
+                LethalInjection = new CustomItemsReborn.Configs.Configs.LethalInjectionConfig
                 {
                     KillOnFail = true,
                     InjectionDelay = 1.5f,
@@ -218,14 +218,14 @@ namespace CustomItemsReborn
                     PickupBroadcast = "<b>You picked up LJ-119</b>",
                     ChangeHint = "Kills a target or the user if misused."
                 },
-                LuckyCoin = new Configs.LuckyCoinConfig
+                LuckyCoin = new CustomItemsReborn.Configs.Configs.LuckyCoinConfig
                 {
                     Duration = 10f,
                     CooldownDuration = 120f,
                     PickupBroadcast = "<b>You picked up LC-119</b>",
                     ChangeHint = "Grants luck-based effects when flipped."
                 },
-                MediGun = new Configs.MediGunConfig
+                MediGun = new CustomItemsReborn.Configs.Configs.MediGunConfig
                 {
                     HealZombies = true,
                     HealZombiesTeamCheck = true,
@@ -234,7 +234,7 @@ namespace CustomItemsReborn
                     PickupBroadcast = "<b>You picked up MG-119</b>",
                     ChangeHint = "Heals players or zombies with a healing beam."
                 },
-                Scp714 = new Configs.Scp714Config
+                Scp714 = new CustomItemsReborn.Configs.Configs.Scp714Config
                 {
                     Scp714Roles = new List<RoleTypeId> {RoleTypeId.Scp049, RoleTypeId.Scp0492},
                     Scp714Effects = new List<EffectType> {EffectType.Asphyxiated},
@@ -255,7 +255,7 @@ namespace CustomItemsReborn
                     PickupBroadcast = "<b>You have picked up SCP-714</b>",
                     ChangeHint = "The jade ring that protects you from hazards."
                 },
-                Scp1499 = new Configs.Scp1499Config
+                Scp1499 = new CustomItemsReborn.Configs.Configs.Scp1499Config
                 {
                     Duration = 15f,
                     TeleportPosition = new Vector3(38.464f, 1014.112f, -32.689f),

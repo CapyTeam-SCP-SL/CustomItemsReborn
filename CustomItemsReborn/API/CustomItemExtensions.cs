@@ -25,7 +25,7 @@ namespace CustomItemsReborn.API
         /// Returns true if the player is currently holding an item of the specified type.
         /// </summary>
         public static bool HasCustomItem<T>(this Player player) where T : CustomItem
-            => player.Items.Any(i => CustomItem.TryGet(i, out T _));
+            => player.Items.Any(i => CustomItem.TryGet(i.Serial, out var ci) && ci is T);
 
         /// <summary>
         /// Returns true if the player is currently holding an item with the specified ID.
@@ -37,7 +37,7 @@ namespace CustomItemsReborn.API
         /// Returns the first held item of the specified type, or null.
         /// </summary>
         public static Item GetCustomItem<T>(this Player player) where T : CustomItem
-            => player.Items.FirstOrDefault(i => CustomItem.TryGet(i, out T _));
+            => player.Items.FirstOrDefault(i => CustomItem.TryGet(i.Serial, out var ci) && ci is T);
 
         /// <summary>
         /// Returns the first held item with the specified ID, or null.
