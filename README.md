@@ -1,49 +1,48 @@
-# CustomItems (WIP)
-## WARNING!!! The plugin is in the process of being updated and will be almost completely redone soon.
-======
+
+# CustomItemsReborn
+
 ## Description
-This plugin has 2 parts, all contained in a single DLL with no needed dependencies.
-Firstly, This plugin adds a number of custom items (detailed below) for server hosts to use on their servers. Currently, these items can either be given to Subclasses (using: [Advanced Subclassing](https://github.com/steven4547466/AdvancedSubclassing)), spawned around the map at pre-defined locations (valid locations listed below), or via commands.
-Secondly, This plugin also provides a very powerful API for other developers to use, for the creation of their own unique, custom items. This API includes item tracking, handles reloading weapons with non-standard clip sizes, and much, much more, automatically, with no concious effort from the developer using it. Overrideable methods are provided to hook your weapon into your own custom event handlers for handling it's logic as necessary.
+CustomItemsReborn is a plugin for SCP: Secret Laboratory that introduces a variety of unique custom items to enhance gameplay. The plugin consists of two primary components, all contained within a single DLL with no external dependencies:
+1. **Custom Items**: A collection of 13 custom items (detailed below) that server hosts can integrate into their servers. These items can be assigned to subclasses using the [Advanced Subclassing](https://github.com/steven4547466/AdvancedSubclassing) plugin, spawned at predefined map locations, or distributed via commands.
+2. **API for Developers**: A robust API for developers to create their own custom items. The API handles item tracking, supports non-standard clip sizes for weapons, and provides overrideable methods for custom event handling, requiring minimal effort from developers.
 
-### Item list
-ItemName | ItemID | Description
-:---: | :---: | :------
-EM-119 | 0 | An EMP Grenade. This grenade acts similar to an Implosion grenade, however when it detonates, all of the doors in the room it is in are locked open, and the lights disabled for a few seconds. If SCP-079 is present in the room, it will send him back to his spawn camera. Also disabled all speakers in the facility temporarily. 
-GL-119 | 1 | A grenade launcher. This weapon shoots grenades that explode on impact with anything, instead of bullets.
-IG-119 | 2 | An Implosion Grenade. This grenade will act similar to a normal Frag grenade, however it has an extremely short fuse, and does very low damage. Upon exploding, anyone within the explosion will be quickly drawn in towards the center of the explosion for a few seconds.
-LJ-119 | 3 | An injection of lethal chemicals that, when injected, immediately kills the user. If the user happens to be the target of a currently enraged SCP-096, the SCP-096 will immediately calm down, regardless of how many other targets they may or may not have.
-LC-119 | 4 | This coin, when dropped while inside the Pocket Dimension, will immediately vanish. For the remainder of the round, whenever a player enters the Pocket Dimension, the coin will spawn in front of one of the correct entrances for a few seconds before vanishing again. This effect has a cooldown.
-MG-119 | 5 | This gun is modified to fire self-injecting projectile darts. When fired at friendly targets, it will heal them. When fired at SCP-049-2, it will slowly begin to 'cure' them, repeated applications will eventually revert the SCP-049-2 to their human state. Has no effect on other hostile targets.
-SCP-127 | 6 | A gun that slowly regenerates it's clip over time, but trying to reload it normally has no effect.
-SG-119 | 7 | A shotgun. Fairly self-explanatory.
-SR-119 | 8 | A sniper rifle. Also self-explanatory.
-TG-119 | 9 | This gun is also modified to fire self-injecting projectile darts. When fired at a hostile target, it will tranquilize them, rendering them unconscious for several seconds.
-Rock | 10 | This is a rock. Left-click to melee someone in the face with it. Left-click to toss it a short distance.
-SCP-1499 | 11 | The gas mask that teleports you to another dimension, when you put it on.
-SCP-714 | 12 | A coin that, when held in your hand, makes you invulnerable to SCP-049 and SCP-049-2. However, as you hold the coin, your stamina will slowly drain. If you run out, your health will start to drain.
-AM-119 | 13 | Pills that, when consumed, make you forget SCP-096's face if you have recently seen it. Removing you from being one of his targets, with some side effects.
-SCP-2818 | 14 | A weapon that, when fired, will convert the entire biomass of it's shooter into the ammunition it fires.
-C4-119 | 15 | A frag-grenade with a much longer than normal fuse, that will stick to the first solid surface it comes in contact with. It can be detonated using a console command. ".detonate"
+### Item List
+| Item Name | Item ID | Description |
+|:----------|:--------|:------------|
+| AM-119 | AntiMemeticPills | Pills that protect against Amnesia effects, particularly SCP-096's face recognition, for a configurable duration. |
+| DeflectorShield | DeflectorShield | A shield that deflects incoming bullets for a set duration, reflecting damage back to attackers with a configurable multiplier. |
+| EM-119 | EmpGrenade | An EMP grenade that opens doors and disables electronics (e.g., Tesla gates, lights) within its blast radius for a configurable duration. |
+| GL-119 | GrenadeLauncher | A weapon that launches explosive grenades that detonate on impact, optionally consuming grenades from the player's inventory. |
+| IG-119 | ImplosionGrenade | A grenade that pulls players toward its explosion center with minimal damage, configurable for suction strength and duration. |
+| LJ-119 | LethalInjection | A syringe that instantly kills a target or the user if misused, with configurable delay and penalties. |
+| LC-119 | LuckyCoin | A coin that, when flipped, grants random luck-based effects (e.g., movement boost or damage resistance) with configurable duration and cooldown. |
+| MG-119 | MediGun | A gun that heals friendly players or cures SCP-049-2 instances with repeated shots, with configurable healing parameters. |
+| SR-119 | SniperRifle | A modified E-11 rifle with a scope and extended barrel, firing high-damage sniper rounds with a configurable damage multiplier and clip size. |
+| TG-119 | TranquilizerGun | A gun that fires non-lethal tranquilizing darts, rendering targets unconscious with configurable duration and SCP resistance. |
+| SCP-2818 | Scp2818 | A firearm that propels the user as a projectile in the aimed direction, with configurable movement parameters and optional despawn. |
+| SCP-714 | Scp714 | A jade ring that protects against specific SCPs and effects, reduces stamina, and reflects damage to SCP-049, with configurable properties. |
+| SCP-1499 | Scp1499 | A gas mask that teleports the user to another dimension for a configurable duration, returning them under specific conditions. |
 
-### Item Configs
-Config settings for the individual items will ***NOT*** be found in the default plugin config file. Instead they will be located in ~/.config/EXILED/Configs/CustomItems on Linux or %AppData%\EXILED\Configs\CustomItems on Winblows.
-The default config file will be named "global.yml" however, the file used can be changed for each SCP server via that server's normal plugin config file, if you wish to run multiple servers with different custom item config settings.
+### Item Configurations
+All item properties, including text messages (e.g., `PickupBroadcast`, `ChangeHint`, and item-specific messages like `TakeOffMessage` for SCP-714), are configurable via a `global.yml` file located at `~/.config/EXILED/Configs/CustomItems` on Linux or `%AppData%\EXILED\Configs\CustomItems` on Windows. The configuration file path and name can be customized in the plugin's main configuration file (`Config.cs`) for each server, allowing different settings across multiple servers.
 
-The actual config values for the items should have descriptions and names that make them self-explanatory.
+Each item's configuration includes detailed, self-explanatory fields for properties such as durations, damage modifiers, and text messages. For example:
+- **PickupBroadcast**: The message displayed when an item is picked up.
+- **ChangeHint**: The hint shown when the item is selected in the inventory.
+
+The `global.yml` file is automatically generated with default values if it does not exist, ensuring ease of setup.
 
 ### Commands
-Command | Arguments | Permissions | Description
-:---: | :---: | :---: | :------
-ci give | (item name/id) [player] | citems.give | Gives the specified item to the indicated player. If no player is specified it gives it to the person running the command. IN-GAME RA COMMAND ONLY.
-ci spawn | (item name/id) (location) | citems.spawn | Spawns the specified item at the specified location. This location can either be one of the valid Spawn Location's below, a player's name (it spawns at their feet), or in-game coordinates.
-ci info | (item name/id) | n/a | Prints a more detailed list of info about a specific item, including name, id, description and spawn locations + chances.
-ci list | n/a | n/a | Lists the names and ID's of all installed and enabled custom items on the server.
-.detonate | n/a | n/a | Detonates any C4-Charges you have placed, if you are within range of them.
+| Command | Arguments | Permissions | Description |
+|:--------|:----------|:------------|:------------|
+| `rci list` | None | `citems.list` | Lists the names and IDs of all installed and enabled custom items on the server. |
+| `rci info` | `<item name/id>` | `citems.info` | Displays detailed information about a specific item, including name, ID, and base type. |
+| `rci spawn` | `<item name/id> <location/player/coordinates>` | `citems.spawn` | Spawns the specified item at a predefined location, a player's position, or specific coordinates. |
+| `rci give` | `<item name/id> [player]` | `citems.give` | Gives the specified item to the indicated player. If no player is specified, the item is given to the command issuer. In-game RA command only. |
+| `rci role` | `<player> <role>` | `citems.role` | Assigns a specified role (e.g., Scp173, Scientist) to the indicated player. Has a 3-second cooldown. |
 
-### Valid Spawn Location names
-The following list of locations are the only ones that are able to be used in the SpawnLocation configs for each item:
-(Their names must be typed EXACTLY as they are listed, otherwise you will probably break your item config file)
+### Valid Spawn Location Names
+The following locations are valid for item spawn configurations and the `rci spawn` command. Names must be entered exactly as listed to avoid configuration errors:
 ```
 Inside012
 Inside012Bottom
@@ -74,7 +73,9 @@ InsideHidRight
 InsideLczWc
 InsideServersBottom
 ```
+
 ### Attachment Names
+The following attachment names are supported for weapon customization (e.g., for `SniperRifle`):
 ```
 None
 IronSights
@@ -107,7 +108,7 @@ ExtendedMagAP
 ExtendedMagJHP
 DrumMagFMJ
 DrumMagAP
-DrumMagJHP,
+DrumMagJHP
 LowcapMagFMJ
 LowcapMagAP
 LowcapMagJHP
@@ -122,73 +123,69 @@ ShotgunExtendedBarrel
 NoRifleStock
 ```
 
-### API Notes **(FOR DEVELOPERS ONLY)**
-Tl;dr - All you need to do is make a class that inherits CustomItem, CustomWeapon or CustomGrenade (depending on what kind of item you're making), override LoadEvents() and UnloadEvents() to register event handlers to the weapon, then inside the event handlers, start everything with
-```c#
-if (CheckItem(ev.Player.CurrentItem))
-```
-CheckItem() will accept both a SyncItemInfo or a Pickup, and will return true if it's the custom item THAT BELONGS TO YOUR CLASS. Note that your class is considered a MANAGER, not an individual weapon.
-Then instantiate the new class and register it as a custom item:
-```c#
-new SomeItem(ItemType, int).RegisterCustomItem();
-```
-The parameters needed will depend on what kind of item you're making, weapons will also require you to provide a clip size in the constructor.
+### API Notes (For Developers)
+The CustomItemsReborn API simplifies the creation of custom items by handling item tracking, non-standard clip sizes, and event management. To create a custom item:
 
-**Long version:**
+1. **Create a Class**: Inherit from `CustomItem`, `CustomWeapon`, or `CustomGrenade` based on the item type.
+2. **Override Methods**: Implement `SubscribeEvents` and `UnsubscribeEvents` to register/unregister event handlers. Use `Check` to verify if an item belongs to your class:
+   ```csharp
+   if (Check(ev.Player.CurrentItem))
+   {
+       // Handle your item's logic
+   }
+   ```
+3. **Register the Item**: Instantiate and register your item using:
+   ```csharp
+   new SomeItem(ItemType.SomeType, 42).RegisterCustomItem();
+   ```
+   For weapons, include the clip size in the constructor.
 
-Each item class is a manager for all items of that type on the server. 
-When you instantiate a new class that inherits from CustomItem, CustomWeapon or CustomGrenade, it will create a new list of both SyncItemInfos and Pickups. CheckItem() will check those lists to see if the object checked is in one of those lists. If it returns true, it's an item your manager is in charge of. If it returns false, it's not your item.
-
-You cannot cast SyncItemInfo or Pickup as a custom item - IE:
-```c#
-TranqGun tranqGun = (TranqGun)ev.Player.CurrentItem();
-```
-Will result in an invalid cast exception. If you need to check if an item belongs to specific manager other than the class you're in already, do this:
-```c#
-foreach (CustomItem item in CustomItems.API.API.GetInstalledItems())
-    if (item.ItemName == "TG-119" && item.CheckItem(ev.Player.CurrentItem())
-    {
-        // do stuff
-        break;
-    }
-```
-
-To create your own custom item, you'll first want to create the class, an example:
-```c#
+**Example Custom Item**:
+```csharp
 public class SomeItem : CustomItem
 {
-    public SomeItem(ItemType type, int id) : base(type,id)
-    {}
-    
-    public override string ItemName = "SomeItemName";
-    protected override string ItemDescription = "Some description of what your item is/does.";
-    //If you want this item to have custom spawn locations on the map
-    protected override Dictionary<SpawnLocation, float> SpawnLocations = YourPlugin.Singleton.Config.SpawnLocations;
-    
-    protected override void LoadEvents()
+    public SomeItem(ItemType type, int id) : base(type, id)
+    {
+    }
+
+    public override string Id => "SomeItemID";
+    public override string Name => "SomeItemName";
+    public override ItemType BaseType => ItemType.SomeType;
+
+    public override void Initialize()
+    {
+        var config = Plugin.Instance.Config.ItemConfigs.SomeItem;
+        PickupBroadcast = config.PickupBroadcast;
+        ChangeHint = config.ChangeHint;
+        // Initialize other properties from config
+        SpawnInRoom(RoomType.SomeRoom, Vector3.zero);
+    }
+
+    protected override void SubscribeEvents()
     {
         Exiled.Events.Handlers.Player.SomeEvent += OnSomeEvent;
-        base.LoadEvents();
+        base.SubscribeEvents();
     }
-    protected override void UnloadEvents()
+
+    protected override void UnsubscribeEvents()
     {
-       Exiled.Events.Handlers.Player.SomeEvent -= OnSomeEvent;
-       base.UnloadEvents();
+        Exiled.Events.Handlers.Player.SomeEvent -= OnSomeEvent;
+        base.UnsubscribeEvents();
     }
-      
-    public void OnSomeEvent(SomeEventEventArgs ev)
+
+    private void OnSomeEvent(SomeEventEventArgs ev)
     {
-      if (CheckItem(ev.Player.CurrentItem))
-      {
-          // this is your item, do whatever you want with it.
-      }
+        if (Check(ev.Player.CurrentItem))
+        {
+            // Implement item logic
+        }
     }
 }
 ```
 
-And then you would register it either in a way similar to how this plugin registers it's own custom items, or alternatively:
-```c#
-public Plugin : Plugin<Config>
+**Registration**:
+```csharp
+public class Plugin : Plugin<Config>
 {
     public override void OnEnabled()
     {
@@ -197,11 +194,24 @@ public Plugin : Plugin<Config>
 }
 ```
 
-Do note, if you're registering your item in your plugin's OnEnabled() method, you MUST add a minimum of 5sec delay before registering, to ensure all other plugins are loaded and that the server process has initialized all of it's components and such.
+**Important**: Register items with a 5-second delay in `OnEnabled` to ensure all server components and plugins are initialized.
+
+**Notes**:
+- Each item class acts as a manager for all instances of that item type, tracking `SyncItemInfo` and `Pickup` objects.
+- Use `Check` to verify item ownership instead of casting (`SyncItemInfo` or `Pickup` cannot be cast to your custom item type).
+- To check for items managed by other classes, iterate through `CustomItems.API.API.GetInstalledItems()` and use `Check`.
+
+### Recent Updates
+- **New Role Command**: Added the `rci role` command to assign roles to players, enhancing server administration capabilities.
+- **Configurable Text**: All text-based properties (e.g., `PickupBroadcast`, `ChangeHint`, and item-specific messages like `TakeOffMessage` for SCP-714) are now configurable via the `global.yml` file.
+- **Expanded Item List**: The plugin now supports 13 items, with `SCP-127`, `SG-119`, `Rock`, and `C4-119` removed or deprecated in favor of new items like `SCP-714`, `SCP-1499`, and `SCP-2818`.
+- **Improved API**: Enhanced support for item initialization from configuration files, ensuring all properties are customizable without modifying code.
+- **Bug Fixes**: Improved error handling and logging for items like `SCP-1499` and `SCP-2818` to prevent crashes and ensure reliable behavior.
 
 ### Credits
- - NeonWizard for the original TranqGun
- - Killer0992 for the original Shotgun
- - Dimenzio for the SpawnGrenade method
- - Michal78900 for SCP-1499
- - SebasCapo for slight API rework.
+- **NeonWizard**: Original `TranquilizerGun` concept.
+- **Killer0992**: Original `Shotgun` concept.
+- **Dimenzio**: `SpawnGrenade` method.
+- **Michal78900**: `SCP-1499` implementation.
+- **SebasCapo**: API rework contributions.
+- **Rozy**: API rework
