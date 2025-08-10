@@ -48,7 +48,7 @@ public class CustomItems : Plugin<Config>
     /// <summary>
     /// Gets the minimum required EXILED version.
     /// </summary>
-    public override Version RequiredExiledVersion { get; } = new(9, 6, 2);
+    public override Version RequiredExiledVersion { get; } = new(9, 7, 2);
 
     /// <summary>
     /// Initializes the plugin, registering custom items, event handlers, and caching UI elements.
